@@ -25,92 +25,120 @@
                     @endif
                 </div>
             </div>
-
-
         </div>
     </section>
 
-    <section class="section">
-        <div class="container">
-            <div class="section__head">
-                <h2 class="section__title">Features</h2>
-                <p class="section__subtitle">Everything you need to discover, read, and save your favorites.</p>
+    <!-- Features Section -->
+    <div class="features-card">
+        <div class="container-card">
+            <div class="section-header-card">
+                <h2 class="section-title-card">Why Choose E-Library?</h2>
+                <p class="section-subtitle-card">Everything you need for a perfect reading experience</p>
             </div>
 
-            <div class="grid3">
-                <div class="card">
-                    <div class="card__icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M6 4h11a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M8 8h8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
+            <div class="features-grid">
+
+                <div class="feature-card">
+                    <div class="feature-icon-card">
+                        <img src="{{ asset('images/home/library.png') }}" alt="Extensive Library">
                     </div>
-                    <div class="card__title">Extensive Library</div>
-                    <div class="muted">Explore a vast collection of books across various genres and topics.</div>
+                    <h3 class="feature-title-card">Extensive Library</h3>
+                    <p class="feature-description-card">
+                        Explore a vast collection of books across various genres and topics
+                    </p>
                 </div>
 
-                <div class="card">
-                    <div class="card__icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/>
-                            <path d="M9 6h6M9 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
+                <div class="feature-card">
+                    <div class="feature-icon-card">
+                        <img src="{{ asset('images/home/feature2.png') }}" alt="Anytime Anywhere">
                     </div>
-                    <div class="card__title">Anytime, Anywhere</div>
-                    <div class="muted">Read on any device. Clean layout with comfortable typography.</div>
+                    <h3 class="feature-title-card">Anytime, Anywhere</h3>
+                    <p class="feature-description-card">
+                        Read on any device with our responsive design and clean layout
+                    </p>
                 </div>
 
-                <div class="card">
-                    <div class="card__icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M17 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="2"/>
-                            <path d="M7 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="2"/>
-                            <path d="M3 22a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            <path d="M13 22a6 6 0 0 1 11-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
+                <div class="feature-card">
+                    <div class="feature-icon-card">
+                        <img src="{{ asset('images/home/feature3.png') }}" alt="Join Community">
                     </div>
-                    <div class="card__title">Join the Community</div>
-                    <div class="muted">Rate and review books. Save favorites and share recommendations.</div>
+                    <h3 class="feature-title-card">Join Community</h3>
+                    <p class="feature-description-card">
+                        Rate and review books, save favorites, and share recommendations
+                    </p>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <section class="section section--soft">
-        <div class="container">
-            <div class="section__head">
-                <h2 class="section__title">Browse Popular Categories</h2>
-                <p class="section__subtitle">Start with a category—then explore more with tags and search.</p>
+    <div class="section-category">
+        <div class="container-category">
+            <div class="category-my-card">
+                <h2 class="headertitle">Browse Popular Categories</h2>
+                <p class="categoriessubtitle">Start with a category—then explore more with tags and search.</p>
             </div>
 
-            @php
-                $fallback = [
-                    ['Science & Tech', 'grad-a'],
-                    ['Literature & Fiction', 'grad-b'],
-                    ['History', 'grad-c'],
-                    ['Business & Finance', 'grad-d'],
-                    ['Health & Wellness', 'grad-e'],
-                    ['Education', 'grad-f'],
-                ];
-                $cards = $categories->count()
-                    ? $categories->take(6)->map(fn($c, $i) => [$c->name, $fallback[$i % count($fallback)][1]])
-                    : collect($fallback);
-            @endphp
-
-            <div class="cats">
-                @foreach ($cards as $c)
-                    @php
-                        $name = is_array($c) ? $c[0] : $c[0];
-                        $grad = is_array($c) ? $c[1] : $c[1];
-                    @endphp
-                    <a class="cat {{ $grad }}" href="{{ route('categories') }}">
-                        <div class="cat__title">{{ $name }}</div>
-                        <div class="cat__hint">Explore</div>
+            <div class="homepage-categories">
+                @if ($categories->count() > 0)
+                    @foreach ($categories->take(6) as $index => $category)
+                        <a class="homepage-category {{ $category->color ?? 'category-grad' }}" 
+                           href="{{ route('categories') }}"
+                           @if ($category->image_cover)
+                               @if(str_starts_with($category->image_cover, 'http'))
+                                   style="background-image: url('{{ $category->image_cover }}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
+                               @else
+                                   style="background-image: url('{{ asset('storage/' . $category->image_cover) }}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
+                               @endif
+                           @endif>
+                            <div class="homepage-category-content">
+                                <div class="homepage-category-title">{{ $category->name }}</div>
+                                <div class="homepage-category-description">{{ $category->description ?? '' }}</div>
+                                <div class="homepage-category-hint">{{ $category->books_count ?? 0 }} Books</div>
+                            </div>
+                        </a>
+                    @endforeach
+                @else
+                    <!-- Fallback categories if no data -->
+                    <a class="homepage-category grad-a" href="{{ route('categories') }}">
+                        <div class="homepage-category-content">
+                            <div class="homepage-category-title">Science & Tech</div>
+                            <div class="homepage-category-hint">Explore</div>
+                        </div>
                     </a>
-                @endforeach
+                    <a class="homepage-category grad-b" href="{{ route('categories') }}">
+                        <div class="homepage-category-content">
+                            <div class="homepage-category-title">Literature & Fiction</div>
+                            <div class="homepage-category-hint">Explore</div>
+                        </div>
+                    </a>
+                    <a class="homepage-category grad-c" href="{{ route('categories') }}">
+                        <div class="homepage-category-content">
+                            <div class="homepage-category-title">History</div>
+                            <div class="homepage-category-hint">Explore</div>
+                        </div>
+                    </a>
+                    <a class="homepage-category grad-d" href="{{ route('categories') }}">
+                        <div class="homepage-category-content">
+                            <div class="homepage-category-title">Business & Finance</div>
+                            <div class="homepage-category-hint">Explore</div>
+                        </div>
+                    </a>
+                    <a class="homepage-category grad-e" href="{{ route('categories') }}">
+                        <div class="homepage-category-content">
+                            <div class="homepage-category-title">Health & Wellness</div>
+                            <div class="homepage-category-hint">Explore</div>
+                        </div>
+                    </a>
+                    <a class="homepage-category grad-f" href="{{ route('categories') }}">
+                        <div class="homepage-category-content">
+                            <div class="homepage-category-title">Education</div>
+                            <div class="homepage-category-hint">Explore</div>
+                        </div>
+                    </a>
+                @endif
             </div>
         </div>
-    </section>
+    </div>
 
     <section class="cta">
         <div class="container cta__inner">

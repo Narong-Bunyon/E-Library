@@ -20,6 +20,7 @@ class Category extends Model
         'name',
         'description',
         'color',
+        'image_cover',
     ];
 
     public function books(): BelongsToMany

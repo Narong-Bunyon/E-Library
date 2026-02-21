@@ -434,7 +434,7 @@
                                     <td>
                                         @try
                                             <span class="badge bg-success">Connected</span>
-                                        @catch (\Exception $e)
+                                        @catch(\Exception $e)
                                             <span class="badge bg-danger">Error</span>
                                         @endtry
                                     </td>
