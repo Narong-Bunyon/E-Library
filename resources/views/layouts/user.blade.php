@@ -424,7 +424,7 @@
             <nav class="user-nav">
                 <div class="nav-section">
                     <div class="nav-title">Main</div>
-                    <a href="{{ route('user.home') }}" class="nav-link {{ request()->routeIs('user.home') ? 'active' : '' }}">
+                    <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}">
                         <i class="fas fa-home"></i>
                         Home
                     </a>
@@ -432,11 +432,11 @@
                         <i class="fas fa-book"></i>
                         Library
                     </a>
-                    <a href="{{ route('user.browse') }}" class="nav-link {{ request()->routeIs('user.browse') ? 'active' : '' }}">
+                    <a href="{{ route('browse') }}" class="nav-link {{ request()->routeIs('browse') ? 'active' : '' }}">
                         <i class="fas fa-search"></i>
                         Browse Books
                     </a>
-                    <a href="{{ route('user.categories') }}" class="nav-link {{ request()->routeIs('user.categories') ? 'active' : '' }}">
+                    <a href="{{ route('categories') }}" class="nav-link {{ request()->routeIs('categories') ? 'active' : '' }}">
                         <i class="fas fa-layer-group"></i>
                         Categories
                     </a>

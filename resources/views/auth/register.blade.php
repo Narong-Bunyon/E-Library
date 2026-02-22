@@ -79,32 +79,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="role" class="form-label">Account Type</label>
-                    <div class="input-group">
-                        <div class="input-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <select 
-                            id="role" 
-                            name="role" 
-                            class="form-control @error('role') is-invalid @enderror" 
-                            required
-                        >
-                            <option value="">Select your account type</option>
-                            <option value="user">Reader - Can read books</option>
-                            <option value="author">Author - Can write and manage books</option>
-                            <option value="admin">Administrator - Full system access</option>
-                        </select>
-                    </div>
-                    @error('role')
-                        <div class="invalid-feedback">
-                            <i class="fas fa-exclamation-circle"></i>
-                            {{ $message }}
-                        </div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
                     <label for="password" class="form-label">Password</label>
                     <div class="input-group">
                         <div class="input-icon">
@@ -195,7 +169,6 @@
                     <input type="hidden" name="email" value="{{ session('registration_data.email') }}">
                     <input type="hidden" name="password" value="{{ session('registration_data.password') }}">
                     <input type="hidden" name="password_confirmation" value="{{ session('registration_data.password') }}">
-                    <input type="hidden" name="role" value="{{ session('registration_data.role') }}">
                     <input type="hidden" name="terms" value="accepted">
                     
                     <div class="form-group">

@@ -3,143 +3,130 @@
 @section('title', 'E‑Library')
 
 @section('content')
+    {{-- Hero Section --}}
     <section class="hero">
         <div class="container hero__grid">
             <div class="hero__copy">
-                <div class="hero__kicker">Discover a World of Knowledge</div>
-                <h1 class="hero__title">Access thousands of books, audiobooks, and articles.</h1>
-                <p class="hero__subtitle">Learn and grow anytime, anywhere with a clean reading experience designed for students and lifelong learners.</p>
+                <h1 class="hero__title">Welcome to E-Library</h1>
+                <p class="hero__subtitle">Explore a world of knowledge at your fingertips.</p>
 
                 <form class="search" action="{{ route('browse') }}" method="get">
                     <label class="sr-only" for="q">Search</label>
                     <input class="search__input" id="q" name="q" type="search" placeholder="Search for books, authors, or topics…" />
                     <button class="btn btn--primary search__btn" type="submit">Search</button>
                 </form>
-
-                <div class="hero__cta">
-                    <a class="btn btn--primary" href="{{ route('browse') }}">Sign Up for Free</a>
-                    @if (Route::has('login'))
-                        <a class="btn btn--ghost" href="{{ route('login') }}">Log In</a>
-                    @else
-                        <a class="btn btn--ghost is-disabled" href="#" aria-disabled="true" tabindex="-1">Log In</a>
-                    @endif
-                </div>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <div class="features-card">
-        <div class="container-card">
-            <div class="section-header-card">
-                <h2 class="section-title-card">Why Choose E-Library?</h2>
-                <p class="section-subtitle-card">Everything you need for a perfect reading experience</p>
-            </div>
+    <div class="home-content">
+        <div class="container">
+            <div class="home-grid">
+                {{-- Main Column --}}
+                <div class="home-main">
 
-            <div class="features-grid">
+                    {{-- Featured Books --}}
+                    <section class="home-section">
+                        <div class="home-section__header">
+                            <h2 class="home-section__title">Featured Books</h2>
+                            <a href="{{ route('browse') }}" class="home-section__link">View All &rsaquo;</a>
+                        </div>
+                        <div class="book-grid">
+                            @forelse ($featuredBooks as $book)
+                                <x-book-card :book="$book" :showRating="true" />
+                            @empty
+                                <p class="text-muted">No featured books yet.</p>
+                            @endforelse
+                        </div>
+                    </section>
 
-                <div class="feature-card">
-                    <div class="feature-icon-card">
-                        <img src="{{ asset('images/home/library.png') }}" alt="Extensive Library">
-                    </div>
-                    <h3 class="feature-title-card">Extensive Library</h3>
-                    <p class="feature-description-card">
-                        Explore a vast collection of books across various genres and topics
-                    </p>
-                </div>
+                    {{-- Categories --}}
+                    <section class="home-section">
+                        <h2 class="home-section__title">Categories</h2>
+                        <div class="category-chips">
+                            @foreach ($categories as $category)
+                                <a href="{{ route('browse', ['category' => $category->id]) }}" class="category-chip">
+                                    {{ $category->name }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </section>
 
-                <div class="feature-card">
-                    <div class="feature-icon-card">
-                        <img src="{{ asset('images/home/feature2.png') }}" alt="Anytime Anywhere">
-                    </div>
-                    <h3 class="feature-title-card">Anytime, Anywhere</h3>
-                    <p class="feature-description-card">
-                        Read on any device with our responsive design and clean layout
-                    </p>
-                </div>
+                    {{-- Recently Added --}}
+                    <section class="home-section">
+                        <div class="home-section__header">
+                            <h2 class="home-section__title">Recently Added</h2>
+                            <a href="{{ route('browse') }}" class="home-section__link">View All &rsaquo;</a>
+                        </div>
+                        <div class="book-grid">
+                            @forelse ($recentBooks as $book)
+                                <x-book-card :book="$book" :showRating="true" :showAction="true" />
+                            @empty
+                                <p class="text-muted">No books added yet.</p>
+                            @endforelse
+                        </div>
+                    </section>
 
-                <div class="feature-card">
-                    <div class="feature-icon-card">
-                        <img src="{{ asset('images/home/feature3.png') }}" alt="Join Community">
-                    </div>
-                    <h3 class="feature-title-card">Join Community</h3>
-                    <p class="feature-description-card">
-                        Rate and review books, save favorites, and share recommendations
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="section-category">
-        <div class="container-category">
-            <div class="category-my-card">
-                <h2 class="headertitle">Browse Popular Categories</h2>
-                <p class="categoriessubtitle">Start with a category—then explore more with tags and search.</p>
-            </div>
-
-            <div class="homepage-categories">
-                @if ($categories->count() > 0)
-                    @foreach ($categories->take(6) as $index => $category)
-                        <a class="homepage-category {{ $category->color ?? 'category-grad' }}" 
-                           href="{{ route('categories') }}"
-                           @if ($category->image_cover)
-                               @if(str_starts_with($category->image_cover, 'http'))
-                                   style="background-image: url('{{ $category->image_cover }}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
-                               @else
-                                   style="background-image: url('{{ asset('storage/' . $category->image_cover) }}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
-                               @endif
-                           @endif>
-                            <div class="homepage-category-content">
-                                <div class="homepage-category-title">{{ $category->name }}</div>
-                                <div class="homepage-category-description">{{ $category->description ?? '' }}</div>
-                                <div class="homepage-category-hint">{{ $category->books_count ?? 0 }} Books</div>
+                    {{-- Recommended for You (logged-in only) --}}
+                    @auth
+                        @if ($recommendedBooks->count() > 0)
+                        <section class="home-section">
+                            <h2 class="home-section__title">Recommended for You</h2>
+                            <div class="book-grid">
+                                @foreach ($recommendedBooks as $book)
+                                    <x-book-card :book="$book" />
+                                @endforeach
                             </div>
-                        </a>
-                    @endforeach
-                @else
-                    <!-- Fallback categories if no data -->
-                    <a class="homepage-category grad-a" href="{{ route('categories') }}">
-                        <div class="homepage-category-content">
-                            <div class="homepage-category-title">Science & Tech</div>
-                            <div class="homepage-category-hint">Explore</div>
+                        </section>
+                        @endif
+                    @endauth
+                </div>
+
+                {{-- Sidebar --}}
+                <aside class="home-sidebar">
+                    {{-- Reading Progress (logged-in only) --}}
+                    @auth
+                        @if ($readingProgress)
+                        <div class="sidebar-card">
+                            <h3 class="sidebar-card__title">My Reading Progress</h3>
+                            <div class="reading-progress-widget">
+                                <div class="reading-progress-widget__circle">
+                                    <span class="reading-progress-widget__pct">{{ $readingProgress->progress_percentage ?? 0 }}%</span>
+                                </div>
+                                <div class="reading-progress-widget__info">
+                                    <p class="reading-progress-widget__label">Currently Reading</p>
+                                    <p class="reading-progress-widget__book">{{ $readingProgress->book->title ?? 'Unknown' }}</p>
+                                    <a href="{{ route('book.read', $readingProgress->book_id) }}" class="btn btn--primary btn--sm">Continue Reading</a>
+                                </div>
+                            </div>
                         </div>
-                    </a>
-                    <a class="homepage-category grad-b" href="{{ route('categories') }}">
-                        <div class="homepage-category-content">
-                            <div class="homepage-category-title">Literature & Fiction</div>
-                            <div class="homepage-category-hint">Explore</div>
+                        @endif
+                    @endauth
+
+                    {{-- Popular Authors --}}
+                    <div class="sidebar-card">
+                        <h3 class="sidebar-card__title">Popular Authors</h3>
+                        <div class="author-list">
+                            @forelse ($popularAuthors as $author)
+                                <div class="author-list__item">
+                                    <div class="author-list__avatar">{{ substr($author->name, 0, 1) }}</div>
+                                    <div class="author-list__info">
+                                        <span class="author-list__name">{{ $author->name }}</span>
+                                        <span class="author-list__count">{{ $author->books_count }} {{ Str::plural('book', $author->books_count) }}</span>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-muted">No authors yet.</p>
+                            @endforelse
                         </div>
-                    </a>
-                    <a class="homepage-category grad-c" href="{{ route('categories') }}">
-                        <div class="homepage-category-content">
-                            <div class="homepage-category-title">History</div>
-                            <div class="homepage-category-hint">Explore</div>
-                        </div>
-                    </a>
-                    <a class="homepage-category grad-d" href="{{ route('categories') }}">
-                        <div class="homepage-category-content">
-                            <div class="homepage-category-title">Business & Finance</div>
-                            <div class="homepage-category-hint">Explore</div>
-                        </div>
-                    </a>
-                    <a class="homepage-category grad-e" href="{{ route('categories') }}">
-                        <div class="homepage-category-content">
-                            <div class="homepage-category-title">Health & Wellness</div>
-                            <div class="homepage-category-hint">Explore</div>
-                        </div>
-                    </a>
-                    <a class="homepage-category grad-f" href="{{ route('categories') }}">
-                        <div class="homepage-category-content">
-                            <div class="homepage-category-title">Education</div>
-                            <div class="homepage-category-hint">Explore</div>
-                        </div>
-                    </a>
-                @endif
+                    </div>
+                </aside>
             </div>
         </div>
     </div>
 
+    {{-- CTA Section (guests only) --}}
+    @guest
     <section class="cta">
         <div class="container cta__inner">
             <div>
@@ -147,14 +134,11 @@
                 <p class="cta__subtitle">Sign up and get unlimited access to thousands of books and resources.</p>
             </div>
             <div class="cta__actions">
-                <a class="btn btn--primary" href="{{ route('browse') }}">Sign Up for Free</a>
-                @if (Route::has('login'))
-                    <a class="btn btn--ghost" href="{{ route('login') }}">Log In</a>
-                @else
-                    <a class="btn btn--ghost is-disabled" href="#" aria-disabled="true" tabindex="-1">Log In</a>
-                @endif
+                <a class="btn btn--primary" href="{{ route('register') }}">Sign Up for Free</a>
+                <a class="btn btn--ghost" href="{{ route('login') }}">Log In</a>
             </div>
         </div>
     </section>
+    @endguest
 @endsection
 

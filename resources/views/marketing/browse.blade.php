@@ -23,43 +23,13 @@
                     <div class="empty-description">When you add books to the database, they will show up here.</div>
                 </div>
             @else
-                <div class="books-grid">
+                <div class="book-grid">
                     @foreach ($books as $book)
-                        <article class="book-card">
-                            <div class="book-cover">
-                                <div class="book-image">
-                                    @if ($book->cover_image)
-                                        <img src="{{ $book->cover_image }}" alt="{{ $book->title }}">
-                                    @else
-                                        <div class="book-placeholder">
-                                            <span class="book-icon">📖</span>
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="book-overlay">
-                                    <div class="book-actions">
-                                        <button class="btn-view">View Details</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="book-info">
-                                <h3 class="book-title">{{ $book->title }}</h3>
-                                <p class="book-author">
-                                    {{ optional(optional($book->author)->user)->name ?? 'Unknown author' }}
-                                </p>
-                                @if ($book->tags->count())
-                                    <div class="book-tags">
-                                        @foreach ($book->tags->take(3) as $tag)
-                                            <span class="tag">{{ $tag->name }}</span>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            </div>
-                        </article>
+                        <x-book-card :book="$book" :showRating="true" />
                     @endforeach
                 </div>
 
-                <div class="pagination-wrapper">
+                <div class="pagination-wrapper" style="margin-top:1.5rem">
                     {{ $books->links() }}
                 </div>
             @endif

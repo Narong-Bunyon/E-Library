@@ -136,7 +136,7 @@
                 <div class="card-body">
                     @if($book->cover_image)
                         <div class="text-center mb-3">
-                            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="img-fluid" style="max-height: 200px;">
+                            <img src="{{ Str::startsWith($book->cover_image, ['http://', 'https://']) ? $book->cover_image : asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="img-fluid" style="max-height: 200px;">
                         </div>
                     @endif
                     

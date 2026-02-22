@@ -8,7 +8,9 @@
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/homepage.css') }}">
     <link rel="stylesheet" href="{{ asset('css/categories.css') }}">
 </head>
 <body class="ui-body">
@@ -36,9 +38,8 @@
 
                 <div class="nav__right">
 
-
                     @php
-                        $currentLocale = app()->getLocale(); // 'en' or 'kh'
+                        $currentLocale = app()->getLocale();
                     @endphp
 
                     <div class="lang">
@@ -63,19 +64,45 @@
                         </div>
                     </div>
 
-                    @if (Route::has('login'))
-                        <a class="btn btn--ghost" href="{{ route('login') }}">Log In</a>
-                    @else
-                        <a class="btn btn--ghost is-disabled" href="#" aria-disabled="true" tabindex="-1">Log
-                            In</a>
-                    @endif
+                    @auth
+                        <a class="nav__link {{ request()->routeIs('user.library') ? 'is-active' : '' }}"
+                            href="{{ route('user.library') }}">My Library</a>
 
-                    @if (Route::has('register'))
-                        <a class="btn btn--primary" href="{{ route('register') }}">Log Up</a>
+                        <div class="user-dropdown">
+                            <button class="user-dropdown__btn" id="userBtn" aria-expanded="false">
+                                <span class="user-dropdown__avatar">{{ substr(Auth::user()->name, 0, 1) }}</span>
+                                <span class="user-dropdown__chev" aria-hidden="true">▾</span>
+                            </button>
+                            <div class="user-dropdown__menu" id="userMenu">
+                                <div class="user-dropdown__header">
+                                    <strong>{{ Auth::user()->name }}</strong>
+                                    <small>{{ Auth::user()->email }}</small>
+                                </div>
+                                <a class="user-dropdown__item" href="{{ route('user.profile') }}">
+                                    <i class="fas fa-user"></i> Profile
+                                </a>
+                                <a class="user-dropdown__item" href="{{ route('user.favorites') }}">
+                                    <i class="fas fa-heart"></i> My Favorites
+                                </a>
+                                <a class="user-dropdown__item" href="{{ route('user.reading-history') }}">
+                                    <i class="fas fa-history"></i> Reading History
+                                </a>
+                                <a class="user-dropdown__item" href="{{ route('user.settings') }}">
+                                    <i class="fas fa-cog"></i> Settings
+                                </a>
+                                <div class="user-dropdown__divider"></div>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="user-dropdown__item user-dropdown__item--logout">
+                                        <i class="fas fa-sign-out-alt"></i> Log Out
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     @else
-                        <a class="btn btn--primary is-disabled" href="#" aria-disabled="true" tabindex="-1">Log
-                            Up</a>
-                    @endif
+                        <a class="btn btn--ghost" href="{{ route('login') }}">Log In</a>
+                        <a class="btn btn--primary" href="{{ route('register') }}">Sign Up</a>
+                    @endauth
                 </div>
             </nav>
         </div>
@@ -204,6 +231,130 @@
             .lang__name {
                 font-size: 0.875rem !important;
             }
+
+            /* User Dropdown */
+            .user-dropdown {
+                position: relative !important;
+            }
+
+            .user-dropdown__btn {
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.35rem !important;
+                background: none !important;
+                border: none !important;
+                cursor: pointer !important;
+                padding: 0.25rem !important;
+            }
+
+            .user-dropdown__avatar {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 36px !important;
+                height: 36px !important;
+                border-radius: 50% !important;
+                background: #6366f1 !important;
+                color: #fff !important;
+                font-weight: 600 !important;
+                font-size: 0.875rem !important;
+            }
+
+            .user-dropdown__chev {
+                font-size: 0.75rem !important;
+                color: #64748b !important;
+            }
+
+            .user-dropdown__menu {
+                position: absolute !important;
+                top: 100% !important;
+                right: 0 !important;
+                min-width: 220px !important;
+                background: white !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                border: 1px solid #e5e7eb !important;
+                border-radius: 8px !important;
+                padding: 0.5rem 0 !important;
+                z-index: 1000 !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                transform: translateY(-10px) !important;
+                transition: all 0.3s ease !important;
+                display: block !important;
+            }
+
+            .user-dropdown.is-open .user-dropdown__menu {
+                opacity: 1 !important;
+                visibility: visible !important;
+                transform: translateY(0) !important;
+            }
+
+            .user-dropdown__header {
+                padding: 0.75rem 1rem !important;
+                border-bottom: 1px solid #e5e7eb !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+
+            .user-dropdown__header strong {
+                font-size: 0.875rem !important;
+                color: #1e293b !important;
+            }
+
+            .user-dropdown__header small {
+                font-size: 0.75rem !important;
+                color: #64748b !important;
+            }
+
+            .user-dropdown__item {
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.5rem !important;
+                padding: 0.6rem 1rem !important;
+                text-decoration: none !important;
+                color: #333 !important;
+                font-size: 0.875rem !important;
+                transition: background 0.2s ease !important;
+                border: none !important;
+                background: none !important;
+                width: 100% !important;
+                cursor: pointer !important;
+                text-align: left !important;
+            }
+
+            .user-dropdown__item:hover {
+                background: #f8fafc !important;
+                color: #6366f1 !important;
+            }
+
+            .user-dropdown__item i {
+                width: 16px !important;
+                text-align: center !important;
+                color: #64748b !important;
+            }
+
+            .user-dropdown__item:hover i {
+                color: #6366f1 !important;
+            }
+
+            .user-dropdown__item--logout {
+                color: #ef4444 !important;
+            }
+
+            .user-dropdown__item--logout:hover {
+                background: #fef2f2 !important;
+                color: #dc2626 !important;
+            }
+
+            .user-dropdown__item--logout i,
+            .user-dropdown__item--logout:hover i {
+                color: #ef4444 !important;
+            }
+
+            .user-dropdown__divider {
+                border-top: 1px solid #e5e7eb !important;
+                margin: 0.25rem 0 !important;
+            }
         `;
         document.head.appendChild(style);
 
@@ -250,10 +401,36 @@
             }
         });
 
-        // Debug: Log elements found
-        console.log('Lang wrapper:', wrap);
-        console.log('Lang button:', btn);
-        console.log('Lang menu:', menu);
+    })();
+
+    // User dropdown toggle
+    (() => {
+        const userWrap = document.querySelector('.user-dropdown');
+        if (!userWrap) return;
+
+        const userBtn = document.getElementById('userBtn');
+        const userMenu = document.getElementById('userMenu');
+
+        userBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            userWrap.classList.toggle('is-open');
+            userBtn.setAttribute('aria-expanded', userWrap.classList.contains('is-open'));
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!userWrap.contains(e.target)) {
+                userWrap.classList.remove('is-open');
+                userBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                userWrap.classList.remove('is-open');
+                userBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
     })();
 </script>
 

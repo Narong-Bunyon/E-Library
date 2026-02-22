@@ -170,7 +170,7 @@
                     @forelse ($mostDownloadedBooks as $book)
                     <div class="d-flex align-items-center mb-3">
                         @if($book->cover_image)
-                            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" style="width: 40px; height: 50px; object-fit: cover; margin-right: 10px;">
+                            <img src="{{ Str::startsWith($book->cover_image, ['http://', 'https://']) ? $book->cover_image : asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" style="width: 40px; height: 50px; object-fit: cover; margin-right: 10px;">
                         @else
                             <div style="width: 40px; height: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold; margin-right: 10px;">
                                 {{ strtoupper(substr($book->title, 0, 1)) }}

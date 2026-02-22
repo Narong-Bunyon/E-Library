@@ -18,7 +18,7 @@
                             Discover amazing books and expand your knowledge
                         </p>
                         <div class="d-flex gap-3">
-                            <a href="{{ route('user.browse') }}" class="btn btn-light btn-lg">
+                            <a href="{{ route('browse') }}" class="btn btn-light btn-lg">
                                 <i class="fas fa-search me-2"></i>
                                 Browse Books
                             </a>
@@ -169,7 +169,7 @@
         </div>
         
         <div class="text-center mt-4">
-            <a href="{{ route('user.browse') }}" class="btn btn-primary">
+            <a href="{{ route('browse') }}" class="btn btn-primary">
                 <i class="fas fa-search me-2"></i>
                 Browse All Books
             </a>
@@ -231,7 +231,7 @@
                 <div class="cta-section text-center p-5">
                     <h3 class="fw-bold mb-3">Ready to Start Reading?</h3>
                     <p class="text-muted mb-4">Join thousands of readers discovering amazing books every day</p>
-                    <a href="{{ route('user.browse') }}" class="btn btn-primary btn-lg">
+                    <a href="{{ route('browse') }}" class="btn btn-primary btn-lg">
                         <i class="fas fa-search me-2"></i>
                         Explore Books Now
                     </a>
