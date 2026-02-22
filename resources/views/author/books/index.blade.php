@@ -84,7 +84,7 @@
                         <tr>
                             <td>
                                 @if($book->cover_image)
-                                    <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" style="width: 40px; height: 50px; object-fit: cover;">
+                                    <img src="{{ Str::startsWith($book->cover_image, ['http://', 'https://']) ? $book->cover_image : asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" style="width: 40px; height: 50px; object-fit: cover;">
                                 @else
                                     <div style="width: 40px; height: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold;">
                                         {{ strtoupper(substr($book->title, 0, 1)) }}

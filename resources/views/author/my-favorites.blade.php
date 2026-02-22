@@ -125,7 +125,7 @@
         @empty
         <div class="col-12 text-center py-5">
             <p class="text-muted">No favorite books found.</p>
-            <a href="{{ route('library.index') }}" class="btn btn-primary">
+            <a href="{{ route('browse') }}" class="btn btn-primary">
                 <i class="fas fa-search me-2"></i>Browse Library
             </a>
         </div>

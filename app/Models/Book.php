@@ -109,4 +109,56 @@ class Book extends Model
     {
         return $this->readingProgress()->count();
     }
+
+    /*
+    |----------------------------------------------------------------------
+    | Access-level helpers (driven by config/book_pricing.php)
+    |----------------------------------------------------------------------
+    */
+
+    public function getAccessLabelAttribute(): string
+    {
+        $labels = config('book_pricing.labels', [0 => 'Free', 1 => 'Subscription', 2 => 'Buy']);
+        return $labels[(int) $this->access_level] ?? 'Free';
+    }
+
+    public function isFree(): bool
+    {
+        return (int) $this->access_level === 0;
+    }
+
+    public function isSubscription(): bool
+    {
+        return (int) $this->access_level === 1;
+    }
+
+    public function isBuy(): bool
+    {
+        return (int) $this->access_level === 2;
+    }
+
+    public function getPrice(): float
+    {
+        if (!$this->isBuy()) {
+            return 0;
+        }
+        $prices = config('book_pricing.book_prices', []);
+        return $prices[$this->id] ?? config('book_pricing.default_price', 9.99);
+    }
+
+    public function getPriceCurrency(): string
+    {
+        return config('book_pricing.default_currency', 'USD');
+    }
+
+    public function getFormattedPriceAttribute(): string
+    {
+        if ($this->isFree()) {
+            return 'Free';
+        }
+        if ($this->isSubscription()) {
+            return 'Subscription';
+        }
+        return '$' . number_format($this->getPrice(), 2);
+    }
 }

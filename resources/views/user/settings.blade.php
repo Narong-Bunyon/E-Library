@@ -1,10 +1,10 @@
-@extends('layouts.user')
+@extends('layouts.marketing')
 
-@section('title', 'Settings')
-@section('page-title', 'Settings')
+@section('title', 'Settings - E‑Library')
 
 @section('content')
-<div class="container-fluid p-0">
+<div class="home-content">
+<div class="container">
     <!-- Settings Header -->
     <div class="row mb-4">
         <div class="col-12">
@@ -237,5 +237,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

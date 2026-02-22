@@ -141,7 +141,7 @@
                             <div class="recent-book-item">
                                 <div class="book-cover">
                                     @if($book->cover_image)
-                                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
+                                        <img src="{{ Str::startsWith($book->cover_image, ['http://', 'https://']) ? $book->cover_image : asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
                                     @else
                                         <div class="placeholder-cover">
                                             <i class="fas fa-book"></i>

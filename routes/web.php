@@ -15,12 +15,15 @@ use App\Http\Controllers\UserController;
 |--------------------------------------------------------------------------
 */
 
-// Marketing Routes
+// =====================================================
+// PUBLIC ROUTES (guests + logged-in users)
+// =====================================================
 Route::controller(MarketingController::class)->group(function () {
     Route::get('/', 'home')->name('home');
     Route::get('/browse', 'browse')->name('browse');
     Route::get('/categories', 'categories')->name('categories');
     Route::get('/about', 'about')->name('about');
+    Route::get('/book/{id}', 'showBook')->name('book.show');
 });
 
 // Authentication Routes
@@ -42,30 +45,29 @@ Route::controller(RegisterController::class)->group(function () {
 });
 
 // =====================================================
-// USER ROUTES (Regular authenticated users - Simple Website)
+// PUBLIC BOOK ACCESS (access control handled in controller)
 // =====================================================
-Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
-    // Main Pages (like a regular website)
-    Route::get('/', [UserController::class, 'dashboard'])->name('home'); // Changed to home
-    Route::get('/library', [LibraryController::class, 'index'])->name('library');
-    Route::get('/browse', [LibraryController::class, 'browse'])->name('browse');
-    Route::get('/categories', [LibraryController::class, 'categories'])->name('categories');
-    Route::get('/book/{id}', [LibraryController::class, 'show'])->name('book.show');
-    Route::get('/read/{id}', [LibraryController::class, 'read'])->name('book.read');
-    
-    // User Personal Pages (simple, not dashboard-style)
-    Route::get('/profile', [UserController::class, 'profile'])->name('profile');
-    Route::get('/favorites', [LibraryController::class, 'favorites'])->name('favorites');
-    Route::get('/reading-history', [LibraryController::class, 'readingHistory'])->name('reading-history');
-    Route::get('/downloads', [LibraryController::class, 'downloads'])->name('downloads');
-    
-    // User Actions
-    Route::post('/favorites/{id}/add', [LibraryController::class, 'addToFavorites'])->name('favorites.add');
-    Route::delete('/favorites/{id}/remove', [LibraryController::class, 'removeFromFavorites'])->name('favorites.remove');
-    Route::post('/profile/update', [UserController::class, 'updateProfile'])->name('profile.update');
-    
-    // Settings (simple)
-    Route::get('/settings', [UserController::class, 'settings'])->name('settings');
+Route::get('/read/{id}', [LibraryController::class, 'read'])->name('book.read');
+Route::get('/download/{id}', [LibraryController::class, 'download'])->name('book.download');
+
+// =====================================================
+// AUTHENTICATED USER ROUTES (all logged-in users)
+// =====================================================
+Route::middleware('auth')->group(function () {
+    // Personal pages
+    Route::get('/my-library', [LibraryController::class, 'index'])->name('user.library');
+    Route::get('/my-favorites', [LibraryController::class, 'favorites'])->name('user.favorites');
+    Route::get('/my-history', [LibraryController::class, 'readingHistory'])->name('user.reading-history');
+    Route::get('/my-downloads', [LibraryController::class, 'downloads'])->name('user.downloads');
+
+    // Favorites actions
+    Route::post('/favorites/{id}', [LibraryController::class, 'addToFavorites'])->name('user.favorites.add');
+    Route::delete('/favorites/{id}', [LibraryController::class, 'removeFromFavorites'])->name('user.favorites.remove');
+
+    // Profile & Settings
+    Route::get('/profile', [UserController::class, 'profile'])->name('user.profile');
+    Route::post('/profile', [UserController::class, 'updateProfile'])->name('user.profile.update');
+    Route::get('/settings', [UserController::class, 'settings'])->name('user.settings');
 });
 
 // =====================================================
@@ -225,15 +227,3 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/author-dashboard', [AdminController::class, 'authorDashboard'])->name('author-dashboard');
 });
 
-// Library Routes (All authenticated users)
-Route::middleware('auth')->prefix('library')->name('library.')->group(function () {
-    Route::get('/', [LibraryController::class, 'index'])->name('index');
-    Route::get('/browse', [LibraryController::class, 'browse'])->name('browse');
-    Route::get('/categories', [LibraryController::class, 'categories'])->name('categories');
-    Route::get('/book/{id}', [LibraryController::class, 'show'])->name('show');
-    Route::get('/read/{id}', [LibraryController::class, 'read'])->name('read');
-    Route::get('/reading-history', [LibraryController::class, 'readingHistory'])->name('reading-history');
-    Route::get('/favorites', [LibraryController::class, 'favorites'])->name('favorites');
-    Route::post('/favorites/{id}/add', [LibraryController::class, 'addToFavorites'])->name('favorites.add');
-    Route::delete('/favorites/{id}/remove', [LibraryController::class, 'removeFromFavorites'])->name('favorites.remove');
-});

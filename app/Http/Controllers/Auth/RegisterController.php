@@ -30,7 +30,6 @@ class RegisterController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => ['required', 'string', 'min:8', 'confirmed'],
-                'role' => ['required', 'string', 'in:user,author,admin'],
                 'terms' => ['required', 'accepted'],
             ]);
 
@@ -40,7 +39,6 @@ class RegisterController extends Controller
                     'name' => $validated['name'],
                     'email' => $validated['email'],
                     'password' => $validated['password'],
-                    'role' => $validated['role'],
                 ]
             ]);
 
@@ -63,7 +61,7 @@ class RegisterController extends Controller
             'name' => $registrationData['name'],
             'email' => $registrationData['email'],
             'password' => Hash::make($registrationData['password']),
-            'role' => $registrationData['role'],
+            'role' => 'user',
         ]);
 
         // Clear session data

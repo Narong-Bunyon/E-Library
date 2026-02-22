@@ -1,39 +1,37 @@
-@extends('layouts.user')
+@extends('layouts.marketing')
 
-@section('title', 'My Favorites')
-@section('page-title', 'My Favorites')
+@section('title', 'My Favorites - E‑Library')
 
 @section('content')
-<div class="container-fluid p-0">
-    <!-- Favorites Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 class="mb-1">My Favorites</h2>
-                    <p class="text-muted mb-0">Books you've marked as favorites for quick access.</p>
-                </div>
-                <div>
-                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
-                        <i class="fas fa-heart me-1"></i>
-                        0 Favorites
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Empty State -->
-    <div class="section-card">
-        <div class="section-body text-center py-5">
-            <i class="fas fa-heart fa-4x text-muted mb-4"></i>
-            <h4 class="mb-3">No favorites yet</h4>
-            <p class="text-muted mb-4">Start adding books to your favorites to see them here.</p>
-            <a href="{{ route('user.browse') }}" class="btn btn-primary btn-lg">
-                <i class="fas fa-search me-2"></i>
-                Browse Books
+<div class="home-content">
+    <div class="container">
+        <div class="home-section__header" style="margin-bottom:1.5rem">
+            <h2 class="home-section__title">My Favorites</h2>
+            <a href="{{ route('browse') }}" class="btn btn--primary btn--sm">
+                <i class="fas fa-search"></i> Browse Books
             </a>
         </div>
+
+        @if ($favorites->count() > 0)
+            <div class="book-grid">
+                @foreach ($favorites as $fav)
+                    @if ($fav->book)
+                        <x-book-card :book="$fav->book" />
+                    @endif
+                @endforeach
+            </div>
+
+            <div style="margin-top:1.5rem">
+                {{ $favorites->links() }}
+            </div>
+        @else
+            <div style="text-align:center; padding:4rem 2rem; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+                <i class="fas fa-heart" style="font-size:3rem; color:#d1d5db; margin-bottom:1rem; display:block"></i>
+                <h3 style="font-size:1.25rem; font-weight:600; margin-bottom:0.5rem">No favorites yet</h3>
+                <p class="text-muted" style="margin-bottom:1.5rem">Start adding books to your favorites to see them here.</p>
+                <a href="{{ route('browse') }}" class="btn btn--primary">Browse Books</a>
+            </div>
+        @endif
     </div>
 </div>
 @endsection

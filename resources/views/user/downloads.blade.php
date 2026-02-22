@@ -1,39 +1,37 @@
-@extends('layouts.user')
+@extends('layouts.marketing')
 
-@section('title', 'My Downloads')
-@section('page-title', 'My Downloads')
+@section('title', 'My Downloads - E‑Library')
 
 @section('content')
-<div class="container-fluid p-0">
-    <!-- Downloads Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 class="mb-1">My Downloads</h2>
-                    <p class="text-muted mb-0">Manage your downloaded books for offline reading.</p>
-                </div>
-                <div>
-                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
-                        <i class="fas fa-download me-1"></i>
-                        0 Downloads
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Empty State -->
-    <div class="section-card">
-        <div class="section-body text-center py-5">
-            <i class="fas fa-download fa-4x text-muted mb-4"></i>
-            <h4 class="mb-3">No downloads yet</h4>
-            <p class="text-muted mb-4">Download books to read them offline anytime, anywhere.</p>
-            <a href="{{ route('user.browse') }}" class="btn btn-primary btn-lg">
-                <i class="fas fa-search me-2"></i>
-                Browse Books
+<div class="home-content">
+    <div class="container">
+        <div class="home-section__header" style="margin-bottom:1.5rem">
+            <h2 class="home-section__title">My Downloads</h2>
+            <a href="{{ route('browse') }}" class="btn btn--primary btn--sm">
+                <i class="fas fa-search"></i> Browse Books
             </a>
         </div>
+
+        @if ($downloads->count() > 0)
+            <div class="book-grid">
+                @foreach ($downloads as $dl)
+                    @if ($dl->book)
+                        <x-book-card :book="$dl->book" />
+                    @endif
+                @endforeach
+            </div>
+
+            <div style="margin-top:1.5rem">
+                {{ $downloads->links() }}
+            </div>
+        @else
+            <div style="text-align:center; padding:4rem 2rem; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+                <i class="fas fa-download" style="font-size:3rem; color:#d1d5db; margin-bottom:1rem; display:block"></i>
+                <h3 style="font-size:1.25rem; font-weight:600; margin-bottom:0.5rem">No downloads yet</h3>
+                <p class="text-muted" style="margin-bottom:1.5rem">Download books to read them offline anytime, anywhere.</p>
+                <a href="{{ route('browse') }}" class="btn btn--primary">Browse Books</a>
+            </div>
+        @endif
     </div>
 </div>
 @endsection

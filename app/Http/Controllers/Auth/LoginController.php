@@ -37,7 +37,7 @@ class LoginController extends Controller
             } elseif ($user->isAuthor()) {
                 return redirect()->intended(route('author.dashboard'));
             } elseif ($user->isUser()) {
-                return redirect()->intended(route('user.home')); // Changed to user.home
+                return redirect()->intended(route('home'));
             }
             
             return redirect()->intended(route('home'))->with('success', 'Welcome back to E-Library!');
