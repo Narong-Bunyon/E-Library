@@ -2,78 +2,84 @@
 
 @section('title', 'Admin Dashboard - E-Library')
 
-@section('page-title', 'Dashboard')
+@section('page-title', 'Dashboard Overview')
 
 @section('content')
-<div class="container-fluid">
+<div class="dashboard-container">
     <!-- Stats Cards -->
     <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card primary">
-                <div class="card-body d-flex align-items-center">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="stat-card primary">
+                <div class="stat-card-body">
                     <div class="stat-icon bg-primary text-white">
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 class="stat-value">{{ $stats['total_users'] }}</h3>
-                        <p class="stat-label mb-1">Total Users</p>
-                        <small class="stat-change positive">
+                        <h3 class="stat-value">{{ $stats['total_users'] ?? 0 }}</h3>
+                        <p class="stat-label">Total Users</p>
+                        <span class="stat-change positive">
                             <i class="fas fa-arrow-up"></i> +12% from last month
-                        </small>
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card success">
-                <div class="card-body d-flex align-items-center">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="stat-card success">
+                <div class="stat-card-body">
                     <div class="stat-icon bg-success text-white">
                         <i class="fas fa-book"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 class="stat-value">{{ $stats['total_books'] }}</h3>
-                        <p class="stat-label mb-1">Total Books</p>
-                        <small class="text-muted">All books in library</small>
+                        <h3 class="stat-value">{{ $stats['total_books'] ?? 0 }}</h3>
+                        <p class="stat-label">Total Books</p>
+                        <span class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> +8% from last month
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card warning">
-                <div class="card-body d-flex align-items-center">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="stat-card warning">
+                <div class="stat-card-body">
                     <div class="stat-icon bg-warning text-white">
                         <i class="fas fa-download"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 class="stat-value">{{ $stats['total_downloads'] }}</h3>
-                        <p class="stat-label mb-1">Total Downloads</p>
-                        <small class="text-muted">All time downloads</small>
+                        <h3 class="stat-value">{{ $stats['total_downloads'] ?? 0 }}</h3>
+                        <p class="stat-label">Total Downloads</p>
+                        <span class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> +15% from last month
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card info">
-                <div class="card-body d-flex align-items-center">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="stat-card info">
+                <div class="stat-card-body">
                     <div class="stat-icon bg-info text-white">
                         <i class="fas fa-comments"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 class="stat-value">{{ $stats['total_reviews'] }}</h3>
-                        <p class="stat-label mb-1">Total Reviews</p>
-                        <small class="text-muted">User feedback</small>
+                        <h3 class="stat-value">{{ $stats['total_reviews'] ?? 0 }}</h3>
+                        <p class="stat-label">Total Reviews</p>
+                        <span class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> +5% from last month
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Activity -->
+    <!-- Recent Activity and Quick Actions -->
     <div class="row mb-4">
-        <div class="col-lg-6">
+        <div class="col-lg-6 mb-4">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -83,19 +89,20 @@
                 </div>
                 <div class="card-body">
                     <div class="activity-list">
-                        @forelse ($recentReviews as $review)
+                        @forelse ($recentReviews ?? [] as $review)
                         <div class="activity-item">
                             <div class="activity-icon success">
                                 <i class="fas fa-star"></i>
                             </div>
                             <div class="activity-content">
-                                <div class="activity-title">New review posted</div>
+                                <div class="activity-title">New Review Posted</div>
                                 <div class="activity-description">{{ $review->user->name ?? 'Anonymous' }} reviewed "{{ $review->book->title ?? 'Unknown Book' }}"</div>
-                                <div class="activity-time">{{ $review->create_at->diffForHumans() }}</div>
+                                <div class="activity-time">{{ \Carbon\Carbon::parse($review->created_at)->diffForHumans() ?? 'Recently' }}</div>
                             </div>
                         </div>
                         @empty
-                        <div class="text-center py-3">
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                             <p class="text-muted">No recent activity</p>
                         </div>
                         @endforelse
@@ -105,7 +112,7 @@
         </div>
 
         <!-- Quick Actions -->
-        <div class="col-lg-6">
+        <div class="col-lg-6 mb-4">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -134,7 +141,7 @@
                                 </div>
                                 <div class="action-content">
                                     <h6>Manage Authors</h6>
-                                    <small>Manage author accounts and permissions</small>
+                                    <small>Manage author accounts</small>
                                 </div>
                             </a>
                         </div>
@@ -182,7 +189,7 @@
                                 </div>
                                 <div class="action-content">
                                     <h6>Reports</h6>
-                                    <small>View system reports and analytics</small>
+                                    <small>View analytics and reports</small>
                                 </div>
                             </a>
                         </div>
@@ -194,7 +201,7 @@
 
     <!-- Recent Books and Users -->
     <div class="row mb-4">
-        <div class="col-lg-6">
+        <div class="col-lg-6 mb-4">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -204,19 +211,24 @@
                 </div>
                 <div class="card-body">
                     <div class="recent-books">
-                        @forelse ($recentBooks as $book)
+                        @forelse ($recentBooks ?? [] as $book)
                         <div class="recent-book-item">
                             <div class="book-cover">
-                                <i class="fas fa-book text-primary"></i>
+                                @if($book->cover_image)
+                                    <img src="{{ $book->cover_image }}" alt="{{ $book->title }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                                @else
+                                    <i class="fas fa-book"></i>
+                                @endif
                             </div>
                             <div class="book-info">
                                 <h6 class="book-title">{{ $book->title }}</h6>
-                                <p class="book-author">{{ $book->author_id ?? 'Unknown Author' }}</p>
-                                <small class="book-date">{{ $book->create_at->diffForHumans() }}</small>
+                                <p class="book-author">{{ $book->author->name ?? 'Unknown Author' }}</p>
+                                <small class="book-date">{{ \Carbon\Carbon::parse($book->created_at)->diffForHumans() ?? 'Recently' }}</small>
                             </div>
                         </div>
                         @empty
-                        <div class="text-center py-3">
+                        <div class="text-center py-4">
+                            <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
                             <p class="text-muted">No books found</p>
                         </div>
                         @endforelse
@@ -225,7 +237,7 @@
             </div>
         </div>
 
-        <div class="col-lg-6">
+        <div class="col-lg-6 mb-4">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -235,7 +247,7 @@
                 </div>
                 <div class="card-body">
                     <div class="recent-users">
-                        @forelse ($recentUsers as $user)
+                        @forelse ($recentUsers ?? [] as $user)
                         <div class="recent-user-item">
                             <div class="user-avatar">
                                 {{ strtoupper(substr($user->name, 0, 1)) }}
@@ -243,11 +255,12 @@
                             <div class="user-info">
                                 <h6 class="user-name">{{ $user->name }}</h6>
                                 <p class="user-email">{{ $user->email }}</p>
-                                <small class="user-date">{{ $user->created_at->diffForHumans() }}</small>
+                                <small class="user-date">{{ \Carbon\Carbon::parse($user->created_at)->diffForHumans() ?? 'Recently' }}</small>
                             </div>
                         </div>
                         @empty
-                        <div class="text-center py-3">
+                        <div class="text-center py-4">
+                            <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
                             <p class="text-muted">No users found</p>
                         </div>
                         @endforelse
@@ -268,30 +281,22 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <h4 class="text-primary">5</h4>
-                                <p class="text-muted">Total Books</p>
-                            </div>
+                    <div class="system-overview">
+                        <div class="system-stat">
+                            <h4>{{ $stats['total_books'] ?? 0 }}</h4>
+                            <p>Total Books</p>
                         </div>
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <h4 class="text-success">12</h4>
-                                <p class="text-muted">Active Readers</p>
-                            </div>
+                        <div class="system-stat">
+                            <h4>{{ $stats['active_users'] ?? 0 }}</h4>
+                            <p>Active Readers</p>
                         </div>
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <h4 class="text-warning">3</h4>
-                                <p class="text-muted">Pending Approvals</p>
-                            </div>
+                        <div class="system-stat">
+                            <h4>{{ $stats['pending_approvals'] ?? 0 }}</h4>
+                            <p>Pending Approvals</p>
                         </div>
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <h4 class="text-info">98%</h4>
-                                <p class="text-muted">System Health</p>
-                            </div>
+                        <div class="system-stat">
+                            <h4>98%</h4>
+                            <p>System Health</p>
                         </div>
                     </div>
                 </div>

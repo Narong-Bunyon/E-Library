@@ -5,15 +5,15 @@
 @section('page-title', 'Manage Users')
 
 @section('content')
-<div class="container-fluid">
+<div class="users-container">
     <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="users-header">
         <div>
-            <h4 class="mb-0">
+            <h4>
                 <i class="fas fa-users me-2"></i>
                 Users Management
             </h4>
-            <p class="text-muted mb-0">Manage user accounts, roles, and permissions</p>
+            <p>Manage user accounts, roles, and permissions</p>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
@@ -79,14 +79,14 @@
     </div>
 
     <!-- Filters Section -->
-    <div class="card mb-4">
+    <div class="filters-card">
         <div class="card-body">
             <div class="row">
                 <div class="col-md-3">
                     <label class="form-label">Search</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="searchInput" placeholder="Search users...">
-                        <button class="btn btn-outline-secondary" onclick="clearSearch()">
+                        <button class="btn" onclick="clearSearch()">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -123,7 +123,7 @@
     </div>
 
     <!-- Users Table -->
-    <div class="card">
+    <div class="users-table-card" id="usersTableContainer">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover modern-table" id="usersTable">
@@ -142,6 +142,7 @@
                     </thead>
                     <tbody>
                         @forelse ($users as $user)
+                        @if($user->id !== auth()->user()->id)
                         <tr data-role="{{ $user->role }}" data-status="{{ $user->status ?? 'active' }}" data-name="{{ strtolower($user->name) }}" data-email="{{ strtolower($user->email) }}">
                             <td>
                                 <input type="checkbox" class="form-check-input user-checkbox" value="{{ $user->id }}">
@@ -172,7 +173,7 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="badge role-badge {{ $user->role }}">
+                                <span class="role-badge {{ $user->role }}">
                                     @switch($user->role)
                                         @case('admin')
                                             <i class="fas fa-user-shield me-1"></i>
@@ -189,7 +190,7 @@
                                 </span>
                             </td>
                             <td>
-                                <span class="badge status-badge {{ $user->status ?? 'active' }}">
+                                <span class="status-badge {{ $user->status ?? 'active' }}">
                                     @switch($user->status ?? 'active')
                                         @case('active')
                                             <i class="fas fa-check-circle me-1"></i>
@@ -211,8 +212,8 @@
                             </td>
                             <td>
                                 <div class="join-info">
-                                    <div class="text-dark">{{ $user->created_at->format('M d, Y') }}</div>
-                                    <small class="text-muted">{{ $user->created_at->diffForHumans() }}</small>
+                                    <div class="text-dark">{{ \Carbon\Carbon::parse($user->created_at)->format('M d, Y') }}</div>
+                                    <small class="text-muted">{{ \Carbon\Carbon::parse($user->created_at)->diffForHumans() }}</small>
                                 </div>
                             </td>
                             <td>
@@ -232,15 +233,18 @@
                                 </div>
                             </td>
                         </tr>
+                        @endif
                         @empty
                         <tr>
                             <td colspan="7" class="text-center py-5">
-                                <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                                <p class="text-muted mb-0">No users found</p>
-                                <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                                    <i class="fas fa-plus me-1"></i>
-                                    Create First User
-                                </button>
+                                <div class="empty-state">
+                                    <i class="fas fa-users fa-4x mb-3"></i>
+                                    <p class="mb-0">No users found</p>
+                                    <button class="btn mt-3" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                                        <i class="fas fa-plus me-1"></i>
+                                        Create First User
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         @endforelse
@@ -252,7 +256,7 @@
 
     <!-- Pagination -->
     @if ($users->hasPages())
-        <div class="d-flex justify-content-between align-items-center mt-4">
+        <div class="d-flex justify-content-between align-items-center mt-4" id="paginationContainer">
             <div class="pagination-info">
                 <i class="fas fa-info-circle me-2"></i>
                 Showing <span class="fw-semibold">{{ $users->firstItem() }}</span> to 
@@ -271,69 +275,235 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Create New User</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Create New User
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ route('admin.users.store') }}" method="POST" id="createUserForm">
                 @csrf
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Name *</label>
-                                <input type="text" class="form-control" name="name" required>
+                    <!-- User Information Section -->
+                    <div class="mb-4">
+                        <h6 class="text-primary fw-bold mb-3">
+                            <i class="fas fa-user me-2"></i>
+                            User Information
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-signature me-1 text-muted"></i>
+                                        Full Name *
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-user"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="name" required 
+                                               placeholder="Enter full name"
+                                               pattern="[A-Za-z\s]{3,50}"
+                                               title="Name should be 3-50 characters, letters only">
+                                    </div>
+                                    <div class="form-text">Enter the user's full name (3-50 characters)</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Email *</label>
-                                <input type="email" class="form-control" name="email" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Password *</label>
-                                <input type="password" class="form-control" name="password" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Confirm Password *</label>
-                                <input type="password" class="form-control" name="password_confirmation" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Role *</label>
-                                <select class="form-select" name="role" required>
-                                    <option value="">Select Role</option>
-                                    <option value="admin">Administrator</option>
-                                    <option value="author">Author</option>
-                                    <option value="reader">Reader</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Phone</label>
-                                <input type="tel" class="form-control" name="phone" placeholder="Optional">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-envelope me-1 text-muted"></i>
+                                        Email Address *
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-envelope"></i>
+                                        </span>
+                                        <input type="email" class="form-control" name="email" required 
+                                               placeholder="user@example.com">
+                                    </div>
+                                    <div class="form-text">This will be used for login</div>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Security Section -->
+                    <div class="mb-4">
+                        <h6 class="text-primary fw-bold mb-3">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            Security Settings
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-lock me-1 text-muted"></i>
+                                        Password *
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                        <input type="password" class="form-control" name="password" required 
+                                               id="password"
+                                               placeholder="Enter strong password"
+                                               minlength="8"
+                                               pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+                                               title="Password must contain at least 8 characters, one uppercase, one lowercase, and one number">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
+                                            <i class="fas fa-eye" id="password-toggle"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Min 8 characters with uppercase, lowercase, and numbers</div>
+                                    <div class="progress mt-2" style="height: 4px;">
+                                        <div class="progress-bar" id="password-strength" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-lock me-1 text-muted"></i>
+                                        Confirm Password *
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                        <input type="password" class="form-control" name="password_confirmation" required 
+                                               id="password_confirmation"
+                                               placeholder="Confirm password"
+                                               oninput="checkPasswordMatch()">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password_confirmation')">
+                                            <i class="fas fa-eye" id="password_confirmation-toggle"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text" id="password-match-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Role & Contact Section -->
+                    <div class="mb-4">
+                        <h6 class="text-primary fw-bold mb-3">
+                            <i class="fas fa-user-cog me-2"></i>
+                            Role & Contact
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-user-tag me-1 text-muted"></i>
+                                        User Role *
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-user-tag"></i>
+                                        </span>
+                                        <select class="form-select" name="role" required id="roleSelect">
+                                            <option value="">Select Role</option>
+                                            <option value="admin">
+                                                Administrator
+                                            </option>
+                                            <option value="author">
+                                                Author
+                                            </option>
+                                            <option value="user">
+                                                User
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="form-text" id="role-description">Select the appropriate role for this user</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-phone me-1 text-muted"></i>
+                                        Phone Number
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-phone"></i>
+                                        </span>
+                                        <input type="tel" class="form-control" name="phone" 
+                                               placeholder="+1 (555) 123-4567"
+                                               pattern="[+]?[0-9\s\-\(\)]+"
+                                               title="Enter a valid phone number">
+                                    </div>
+                                    <div class="form-text">Optional: Enter contact number</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
                     <div class="mb-3">
-                        <label class="form-label">Address</label>
-                        <textarea class="form-control" name="address" rows="2" placeholder="Optional"></textarea>
+                        <h6 class="text-primary fw-bold mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Additional Information
+                        </h6>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-map-marker-alt me-1 text-muted"></i>
+                                Address
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </span>
+                                <textarea class="form-control" name="address" rows="2" 
+                                          placeholder="Enter address (optional)"
+                                          maxlength="200"></textarea>
+                            </div>
+                            <div class="form-text">Optional: User's address (max 200 characters)</div>
+                        </div>
+                    </div>
+
+                    <!-- Account Status -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-toggle-on me-1 text-muted"></i>
+                                    Account Status
+                                </label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="status" id="statusSwitch" checked>
+                                    <label class="form-check-label" for="statusSwitch">
+                                        <span id="statusText">Active</span>
+                                    </label>
+                                </div>
+                                <div class="form-text">New accounts are active by default</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-envelope me-1 text-muted"></i>
+                                    Email Verification
+                                </label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="email_verified" id="emailVerifiedSwitch">
+                                    <label class="form-check-label" for="emailVerifiedSwitch">
+                                        Mark as Verified
+                                    </label>
+                                </div>
+                                <div class="form-text">Skip email verification for this user</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="createUserBtn">
                         <i class="fas fa-save me-1"></i>
-                        Create User
+                        <span id="createBtnText">Create User</span>
                     </button>
                 </div>
             </form>
@@ -435,6 +605,395 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle pagination clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.pagination a')) {
+            e.preventDefault();
+            const url = e.target.closest('a').href;
+            loadUsers(url);
+        }
+    });
+    
+    // Handle filter changes
+    document.getElementById('searchInput')?.addEventListener('input', debounce(function() {
+        loadUsers(window.location.href);
+    }, 500));
+    
+    document.getElementById('roleFilter')?.addEventListener('change', function() {
+        loadUsers(window.location.href);
+    });
+    
+    document.getElementById('statusFilter')?.addEventListener('change', function() {
+        loadUsers(window.location.href);
+    });
+    
+    document.getElementById('sortBy')?.addEventListener('change', function() {
+        loadUsers(window.location.href);
+    });
+});
+
+function loadUsers(url) {
+    // Show loading state
+    const tableContainer = document.getElementById('usersTableContainer');
+    const paginationContainer = document.getElementById('paginationContainer');
+    
+    if (tableContainer) {
+        tableContainer.style.opacity = '0.5';
+        tableContainer.style.pointerEvents = 'none';
+    }
+    
+    if (paginationContainer) {
+        paginationContainer.style.opacity = '0.5';
+        paginationContainer.style.pointerEvents = 'none';
+    }
+    
+    // Get current filter values
+    const search = document.getElementById('searchInput')?.value || '';
+    const role = document.getElementById('roleFilter')?.value || '';
+    const status = document.getElementById('statusFilter')?.value || '';
+    const sortBy = document.getElementById('sortBy')?.value || '';
+    
+    // Build URL with parameters
+    const urlObj = new URL(url);
+    if (search) urlObj.searchParams.set('search', search);
+    if (role) urlObj.searchParams.set('role', role);
+    if (status) urlObj.searchParams.set('status', status);
+    if (sortBy) urlObj.searchParams.set('sort', sortBy);
+    
+    // Add AJAX parameter to indicate this is an AJAX request
+    urlObj.searchParams.set('ajax', '1');
+    
+    fetch(urlObj.toString(), {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'text/html'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        // Create a temporary DOM element to parse the response
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Extract the new table content
+        const newTableContainer = tempDiv.querySelector('#usersTableContainer');
+        const newPaginationContainer = tempDiv.querySelector('#paginationContainer');
+        
+        // Update the table
+        if (newTableContainer && tableContainer) {
+            tableContainer.innerHTML = newTableContainer.innerHTML;
+            tableContainer.style.opacity = '1';
+            tableContainer.style.pointerEvents = 'auto';
+        }
+        
+        // Update pagination
+        if (newPaginationContainer && paginationContainer) {
+            paginationContainer.innerHTML = newPaginationContainer.innerHTML;
+            paginationContainer.style.opacity = '1';
+            paginationContainer.style.pointerEvents = 'auto';
+        }
+        
+        // Update URL in browser without reload
+        const newUrl = urlObj.toString().replace('&ajax=1', '').replace('?ajax=1', '');
+        history.pushState({}, '', newUrl);
+        
+        // Reinitialize event listeners for new content
+        reinitializeEventListeners();
+    })
+    .catch(error => {
+        console.error('Error loading users:', error);
+        // Reset loading state
+        if (tableContainer) {
+            tableContainer.style.opacity = '1';
+            tableContainer.style.pointerEvents = 'auto';
+        }
+        if (paginationContainer) {
+            paginationContainer.style.opacity = '1';
+            paginationContainer.style.pointerEvents = 'auto';
+        }
+    });
+}
+
+function reinitializeEventListeners() {
+    // Reinitialize any event listeners for the new content
+    // This will be called after AJAX updates
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Enhanced Create User Functions
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const toggle = document.getElementById(fieldId + '-toggle');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        toggle.classList.remove('fa-eye');
+        toggle.classList.add('fa-eye-slash');
+    } else {
+        field.type = 'password';
+        toggle.classList.remove('fa-eye-slash');
+        toggle.classList.add('fa-eye');
+    }
+}
+
+function checkPasswordStrength() {
+    const password = document.getElementById('password').value;
+    const strengthBar = document.getElementById('password-strength');
+    let strength = 0;
+    
+    if (password.length >= 8) strength += 25;
+    if (password.match(/[a-z]/)) strength += 25;
+    if (password.match(/[A-Z]/)) strength += 25;
+    if (password.match(/[0-9]/)) strength += 25;
+    
+    strengthBar.style.width = strength + '%';
+    
+    if (strength <= 25) {
+        strengthBar.className = 'progress-bar bg-danger';
+    } else if (strength <= 50) {
+        strengthBar.className = 'progress-bar bg-warning';
+    } else if (strength <= 75) {
+        strengthBar.className = 'progress-bar bg-info';
+    } else {
+        strengthBar.className = 'progress-bar bg-success';
+    }
+}
+
+function checkPasswordMatch() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('password_confirmation').value;
+    const feedback = document.getElementById('password-match-feedback');
+    
+    if (confirmPassword === '') {
+        feedback.textContent = '';
+        feedback.className = 'form-text';
+        return;
+    }
+    
+    if (password === confirmPassword) {
+        feedback.textContent = '✓ Passwords match';
+        feedback.className = 'form-text text-success';
+    } else {
+        feedback.textContent = '✗ Passwords do not match';
+        feedback.className = 'form-text text-danger';
+    }
+}
+
+function updateRoleDescription() {
+    const roleSelect = document.getElementById('roleSelect');
+    const roleDescription = document.getElementById('role-description');
+    
+    const descriptions = {
+        'admin': 'Full system access including user management and settings',
+        'author': 'Can create, edit, and manage their own books and content',
+        'user': 'Standard user access with reading and basic functionality'
+    };
+    
+    if (roleSelect.value && descriptions[roleSelect.value]) {
+        roleDescription.textContent = descriptions[roleSelect.value];
+        roleDescription.className = 'form-text text-primary';
+    } else {
+        roleDescription.textContent = 'Select the appropriate role for this user';
+        roleDescription.className = 'form-text';
+    }
+}
+
+function toggleStatus() {
+    const statusSwitch = document.getElementById('statusSwitch');
+    const statusText = document.getElementById('statusText');
+    
+    if (statusSwitch.checked) {
+        statusText.textContent = 'Active';
+        statusText.className = 'text-success';
+    } else {
+        statusText.textContent = 'Inactive';
+        statusText.className = 'text-danger';
+    }
+}
+
+// Form validation and submission
+document.getElementById('createUserForm')?.addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent normal form submission
+    
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('password_confirmation').value;
+    const createBtn = document.getElementById('createUserBtn');
+    const createBtnText = document.getElementById('createBtnText');
+    
+    if (password !== confirmPassword) {
+        alert('Passwords do not match!');
+        return false;
+    }
+    
+    if (password.length < 8) {
+        alert('Password must be at least 8 characters long!');
+        return false;
+    }
+    
+    // Show loading state
+    createBtn.disabled = true;
+    createBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Creating User...';
+    
+    // Get form data
+    const formData = new FormData(this);
+    
+    // Submit via AJAX
+    fetch(this.action, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showSuccessMessage('User created successfully!');
+            
+            // Redirect to users page
+            setTimeout(() => {
+                window.location.href = '/admin/users';
+            }, 1500); // Wait 1.5 seconds to show notification
+            
+        } else {
+            // Show errors
+            if (data.errors) {
+                let errorMessages = '';
+                for (let field in data.errors) {
+                    errorMessages += data.errors[field].join('\n') + '\n';
+                }
+                alert('Error: ' + errorMessages);
+            } else {
+                alert('Error creating user. Please try again.');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating user. Please try again.');
+    })
+    .finally(() => {
+        // Reset button
+        createBtn.disabled = false;
+        createBtn.innerHTML = '<i class="fas fa-save me-1"></i> <span id="createBtnText">Create User</span>';
+    });
+    
+    return false;
+});
+
+function showSuccessMessage(message) {
+    // Create success notification
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    notification.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 3000);
+}
+
+// Event listeners
+document.getElementById('password')?.addEventListener('input', function() {
+    checkPasswordStrength();
+    checkPasswordMatch();
+});
+
+document.getElementById('roleSelect')?.addEventListener('change', updateRoleDescription);
+document.getElementById('statusSwitch')?.addEventListener('change', toggleStatus);
+
+// Initialize on modal show
+document.getElementById('createUserModal')?.addEventListener('show.bs.modal', function() {
+    // Reset form
+    document.getElementById('createUserForm').reset();
+    document.getElementById('password-strength').style.width = '0%';
+    document.getElementById('password-match-feedback').textContent = '';
+    document.getElementById('statusText').textContent = 'Active';
+    document.getElementById('statusText').className = 'text-success';
+    
+    // Reset button
+    const createBtn = document.getElementById('createUserBtn');
+    createBtn.disabled = false;
+    createBtn.innerHTML = '<i class="fas fa-save me-1"></i> <span id="createBtnText">Create User</span>';
+});
+
+// Original functions (keep your existing functions)
+function filterTable() {
+    loadUsers(window.location.href);
+}
+
+function sortTable() {
+    loadUsers(window.location.href);
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = '';
+        loadUsers(window.location.href);
+    }
+}
+
+function viewUser(userId) {
+    // Your existing viewUser function
+    console.log('View user:', userId);
+}
+
+function editUser(userId) {
+    // Your existing editUser function
+    console.log('Edit user:', userId);
+}
+
+function toggleUserStatus(userId) {
+    // Your existing toggleUserStatus function
+    console.log('Toggle user status:', userId);
+}
+
+function deleteUser(userId) {
+    // Your existing deleteUser function
+    console.log('Delete user:', userId);
+}
+
+function exportUsers() {
+    // Your existing exportUsers function
+    console.log('Export users');
+}
+</script>
+@endpush
 
 @push('styles')
 <style>
