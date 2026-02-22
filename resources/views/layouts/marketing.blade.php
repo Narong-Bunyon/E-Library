@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('css/homepage.css') }}">
     <link rel="stylesheet" href="{{ asset('css/categories.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin-roles.css') }}">
 </head>
 <body class="ui-body">
     <header class="topbar">

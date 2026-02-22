@@ -831,7 +831,7 @@ class AdminController extends Controller
             return response()->json(['success' => true, 'role' => $role]);
         }
         
-        return redirect()->route('admin.roles')->with('success', 'Role created successfully.');
+        return redirect()->route('admin.roles.index')->with('success', 'Role created successfully.');
     }
 
     /**
@@ -875,7 +875,7 @@ class AdminController extends Controller
             return response()->json(['success' => true, 'role' => $role]);
         }
         
-        return redirect()->route('admin.roles')->with('success', 'Role updated successfully.');
+        return redirect()->route('admin.roles.index')->with('success', 'Role updated successfully.');
     }
 
     /**
@@ -887,12 +887,12 @@ class AdminController extends Controller
         
         // Check if role has users
         if ($role->users()->count() > 0) {
-            return response()->json(['error' => 'Cannot delete role with assigned users'], 400);
+            return redirect()->back()->with('error', 'Cannot delete role with assigned users');
         }
         
         $role->delete();
         
-        return response()->json(['success' => true, 'message' => 'Role deleted successfully.']);
+        return redirect()->route('admin.roles.index')->with('success', 'Role deleted successfully.');
     }
 
     /**
