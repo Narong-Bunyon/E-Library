@@ -5,84 +5,91 @@
 @section('page-title', 'Analytics & Statistics')
 
 @section('content')
-<div class="container-fluid">
-    <!-- Overview Stats -->
+<div class="container-fluid p-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 mb-1">Analytics Dashboard</h2>
+            <p class="text-muted mb-0">Monitor your e-library performance and user engagement</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="exportAnalytics()">
+                <i class="fas fa-download me-1"></i> Export Report
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="refreshAnalytics()">
+                <i class="fas fa-sync-alt me-1"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Overview Statistics -->
     <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card primary">
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm stat-card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
-                        <div class="stat-icon">
-                            <i class="fas fa-users"></i>
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary rounded-3 p-3">
+                            <i class="fas fa-users fs-4"></i>
                         </div>
-                        <div class="stat-content">
-                            <h3 class="stat-value">{{ $stats['total_users'] }}</h3>
-                            <p class="stat-label">Total Users</p>
-                            @if($stats['users_this_month'] > 0)
-                                <small class="text-success">
-                                    <i class="fas fa-arrow-up"></i> +{{ $stats['users_this_month'] }} this month
-                                </small>
-                            @endif
+                        <div class="ms-3">
+                            <h3 class="mb-1 fw-bold">{{ $stats['total_users'] ?? 0 }}</h3>
+                            <p class="text-muted mb-1">Total Users</p>
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up"></i> +{{ $stats['users_this_month'] ?? 0 }} this month
+                            </small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card success">
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm stat-card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
-                        <div class="stat-icon">
-                            <i class="fas fa-book"></i>
+                        <div class="stat-icon bg-success bg-opacity-10 text-success rounded-3 p-3">
+                            <i class="fas fa-book fs-4"></i>
                         </div>
-                        <div class="stat-content">
-                            <h3 class="stat-value">{{ $stats['total_books'] }}</h3>
-                            <p class="stat-label">Total Books</p>
-                            <small class="text-muted">{{ $stats['published_books'] }} published, {{ $stats['draft_books'] }} drafts</small>
-                            @if($stats['books_this_month'] > 0)
-                                <small class="text-success d-block">
-                                    <i class="fas fa-arrow-up"></i> +{{ $stats['books_this_month'] }} this month
-                                </small>
-                            @endif
+                        <div class="ms-3">
+                            <h3 class="mb-1 fw-bold">{{ $stats['total_books'] ?? 0 }}</h3>
+                            <p class="text-muted mb-1">Total Books</p>
+                            <small class="text-muted">{{ $stats['published_books'] ?? 0 }} published</small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card warning">
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm stat-card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
-                        <div class="stat-icon">
-                            <i class="fas fa-download"></i>
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning rounded-3 p-3">
+                            <i class="fas fa-download fs-4"></i>
                         </div>
-                        <div class="stat-content">
-                            <h3 class="stat-value">{{ $stats['total_downloads'] }}</h3>
-                            <p class="stat-label">Total Downloads</p>
-                            @if($stats['downloads_this_month'] > 0)
-                                <small class="text-success">
-                                    <i class="fas fa-arrow-up"></i> +{{ $stats['downloads_this_month'] }} this month
-                                </small>
-                            @endif
+                        <div class="ms-3">
+                            <h3 class="mb-1 fw-bold">{{ $stats['total_downloads'] ?? 0 }}</h3>
+                            <p class="text-muted mb-1">Total Downloads</p>
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up"></i> +{{ $stats['downloads_this_month'] ?? 0 }} this month
+                            </small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card info">
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm stat-card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
-                        <div class="stat-icon">
-                            <i class="fas fa-eye"></i>
+                        <div class="stat-icon bg-info bg-opacity-10 text-info rounded-3 p-3">
+                            <i class="fas fa-star fs-4"></i>
                         </div>
-                        <div class="stat-content">
-                            <h3 class="stat-value">{{ $stats['total_views'] }}</h3>
-                            <p class="stat-label">Total Views</p>
-                            <small class="text-muted">{{ $stats['completion_rate'] }}% completion rate</small>
+                        <div class="ms-3">
+                            <h3 class="mb-1 fw-bold">{{ $stats['total_reviews'] ?? 0 }}</h3>
+                            <p class="text-muted mb-1">Total Reviews</p>
+                            <small class="text-muted">{{ $stats['avg_rating'] ?? '0.0' }} avg rating</small>
                         </div>
                     </div>
                 </div>
@@ -90,114 +97,26 @@
         </div>
     </div>
 
-    <!-- Additional Stats Row -->
+    <!-- Charts Section -->
     <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card secondary">
+        <div class="col-lg-8 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">User Activity Overview</h5>
+                </div>
                 <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon">
-                            <i class="fas fa-star"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 class="stat-value">{{ $stats['avg_rating'] }}</h3>
-                            <p class="stat-label">Avg Rating</p>
-                            <small class="text-muted">{{ $stats['total_reviews'] }} reviews</small>
-                        </div>
-                    </div>
+                    <canvas id="activityChart" height="300"></canvas>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card success">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon">
-                            <i class="fas fa-heart"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 class="stat-value">{{ $stats['user_satisfaction'] }}%</h3>
-                            <p class="stat-label">User Satisfaction</p>
-                            <small class="text-muted">Based on 4-5 star ratings</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card warning">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 class="stat-value">{{ $stats['avg_reading_time'] }}h</h3>
-                            <p class="stat-label">Avg Reading Time</p>
-                            <small class="text-muted">Per completed book</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card info">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon">
-                            <i class="fas fa-bookmark"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 class="stat-value">{{ $stats['total_favorites'] }}</h3>
-                            <p class="stat-label">Total Favorites</p>
-                            <small class="text-muted">Books marked as favorite</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts Row -->
-    <div class="row mb-4">
-        <div class="col-lg-8 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-line me-2"></i>
-                        Reading & Download Trends (Last 30 Days)
-                    </h5>
+        <div class="col-lg-4 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Content Distribution</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="trendsChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-pie me-2"></i>
-                        Category Distribution
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="categoryChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-pie me-2"></i>
-                        Book Categories
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="categoryChart" height="300"></canvas>
+                    <canvas id="contentChart" height="300"></canvas>
                 </div>
             </div>
         </div>
@@ -205,383 +124,86 @@
 
     <!-- Popular Books & Recent Activity -->
     <div class="row mb-4">
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-fire me-2"></i>
-                        Popular Books
-                    </h5>
+        <div class="col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Popular Books</h5>
                 </div>
                 <div class="card-body">
-                    <div class="popular-books">
-                        @forelse ($popularBooks as $index => $book)
-                        <div class="popular-book-item d-flex align-items-center mb-3">
-                            <div class="book-rank">{{ $index + 1 }}</div>
-                            <div class="book-cover me-3">
-                                <i class="fas fa-book text-primary"></i>
-                            </div>
-                            <div class="book-info flex-grow-1">
-                                <h6 class="book-title">{{ $book->title }}</h6>
-                                <p class="book-stats text-muted mb-0">
-                                    <i class="fas fa-download me-1"></i> {{ $book->downloads_count ?? 0 }} downloads
-                                    @if($book->author)
-                                        <span class="ms-2">by {{ $book->author->name }}</span>
-                                    @endif
-                                </p>
-                            </div>
-                            <div class="book-rating">
-                                <i class="fas fa-star text-warning"></i> {{ $book->average_rating ?? 'N/A' }}
-                            </div>
+                    @forelse ($popularBooks ?? [] as $book)
+                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                        <div class="book-rank bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">
+                            {{ $loop->iteration }}
                         </div>
-                        @empty
-                        <div class="text-center py-4">
-                            <i class="fas fa-book fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No books found</p>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ $book->title }}</h6>
+                            <p class="text-muted mb-0 small">{{ $book->author_name ?? 'Unknown Author' }}</p>
                         </div>
-                        @endforelse
+                        <div class="text-end">
+                            <div class="badge bg-success mb-1">{{ $book->downloads ?? 0 }} downloads</div>
+                            <div class="text-muted small">{{ $book->rating ?? '0.0' }} ⭐</div>
+                        </div>
                     </div>
+                    @empty
+                    <div class="text-center py-4">
+                        <i class="fas fa-book text-muted fa-2x mb-2"></i>
+                        <p class="text-muted">No books available</p>
+                    </div>
+                    @endforelse
                 </div>
-
-                        <div class="popular-book-item d-flex align-items-center mb-3">
-                            <div class="book-rank">3</div>
-                            <div class="book-cover me-3">
-                                <i class="fas fa-book text-warning"></i>
-                            </div>
             </div>
         </div>
 
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-clock me-2"></i>
-                        Recent Activity
-                    </h5>
+        <div class="col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Recent Activity</h5>
                 </div>
-                @php
-function getActivityColor($action) {
-    $colors = [
-        'login' => 'success',
-        'download' => 'primary',
-        'register' => 'info',
-        'review' => 'warning',
-        'favorite' => 'danger'
-    ];
-    return $colors[$action] ?? 'secondary';
-}
-
-function getActivityTitle($action) {
-    $titles = [
-        'login' => 'User Login',
-        'download' => 'Book Downloaded',
-        'register' => 'New User',
-        'review' => 'Review Posted',
-        'favorite' => 'Book Favorited'
-    ];
-    return $titles[$action] ?? 'Activity';
-}
-
-function getActivityDescription($activity) {
-    switch($activity->action) {
-        case 'download':
-            return 'downloaded "' . ($activity->book->title ?? 'a book') . '"';
-        case 'review':
-            return 'reviewed "' . ($activity->book->title ?? 'a book') . '"';
-        case 'favorite':
-            return 'favorited "' . ($activity->book->title ?? 'a book') . '"';
-        default:
-            return $activity->description ?? 'performed an action';
-    }
-}
-@endphp
-
                 <div class="card-body">
                     <div class="activity-timeline">
-                        @forelse ($recentActivity as $activity)
-                        <div class="activity-item">
-                            <div class="activity-dot bg-{{ getActivityColor($activity->action) }}"></div>
-                            <div class="activity-content">
-                                <h6 class="activity-title">{{ getActivityTitle($activity->action) }}</h6>
-                                <p class="activity-description">
-                                    {{ $activity->user->name ?? 'System' }} 
-                                    {{ getActivityDescription($activity) }}
-                                </p>
-                                <small class="activity-time">{{ $activity->created_at->diffForHumans() }}</small>
+                        @forelse ($recentActivity ?? [] as $activity)
+                        <div class="activity-item d-flex mb-3">
+                            <div class="activity-indicator me-3">
+                                <div class="activity-dot bg-{{ 
+                                    $activity->action === 'login' ? 'success' : 
+                                    ($activity->action === 'download' ? 'primary' : 
+                                    ($activity->action === 'register' ? 'info' : 
+                                    ($activity->action === 'review' ? 'warning' : 'secondary')))
+                                }} rounded-circle" style="width: 12px; height: 12px;"></div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="activity-card bg-light rounded p-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-0 fw-semibold">{{
+                                            $activity->action === 'login' ? 'User Login' : 
+                                            ($activity->action === 'download' ? 'Book Downloaded' : 
+                                            ($activity->action === 'register' ? 'New User' : 
+                                            ($activity->action === 'review' ? 'Review Posted' : 'Activity')))
+                                        }}</h6>
+                                        <small class="text-muted">{{ $activity->created_at->diffForHumans() }}</small>
+                                    </div>
+                                    <p class="mb-0 text-muted small">
+                                        <strong>{{ $activity->user_name ?? 'System' }}</strong>
+                                        @switch($activity->action)
+                                            @case('download')
+                                                downloaded "{{ $activity->book_title ?? 'a book' }}"
+                                                @break
+                                            @case('review')
+                                                reviewed "{{ $activity->book_title ?? 'a book' }}"
+                                                @break
+                                            @default
+                                                {{ $activity->description ?? 'performed an action' }}
+                                        @endswitch
+                                    </p>
+                                </div>
                             </div>
                         </div>
                         @empty
                         <div class="text-center py-4">
-                            <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                            <i class="fas fa-clock text-muted fa-2x mb-2"></i>
                             <p class="text-muted">No recent activity</p>
                         </div>
                         @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-@push('styles')
-<style>
-.stat-card {
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-}
-
-.stat-card.primary {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-    color: white;
-}
-
-.stat-card.success {
-    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
-    color: white;
-}
-
-.stat-card.warning {
-    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-    color: white;
-}
-
-.stat-card.info {
-    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-    color: white;
-}
-
-.stat-card.secondary {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    color: white;
-}
-
-.stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    margin-bottom: 15px;
-}
-
-.stat-value {
-    font-size: 32px;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.stat-label {
-    font-size: 14px;
-    opacity: 0.9;
-    margin: 0;
-}
-
-.popular-book-item {
-    padding: 10px;
-    border-radius: 8px;
-    background: #f8f9fa;
-    transition: background 0.3s ease;
-}
-
-.popular-book-item:hover {
-    background: #e9ecef;
-}
-
-.book-rank {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: #007bff;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.book-cover {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: #f8f9fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-}
-
-.book-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 2px;
-}
-
-.book-stats {
-    font-size: 12px;
-}
-
-.book-rating {
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.activity-item {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 20px;
-    position: relative;
-}
-
-.activity-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin-right: 15px;
-    margin-top: 5px;
-    flex-shrink: 0;
-}
-
-.activity-content {
-    flex-grow-1;
-}
-
-.activity-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 2px;
-}
-
-.activity-description {
-    font-size: 13px;
-    color: #6c757d;
-    margin-bottom: 2px;
-}
-
-.activity-time {
-    font-size: 11px;
-    color: #999;
-}
-</style>
-@endpush
-
-@push('scripts')
-<script>
-// Chart.js configurations
-document.addEventListener('DOMContentLoaded', function() {
-    // Trends Chart
-    const trendsCtx = document.getElementById('trendsChart');
-    if (trendsCtx) {
-        new Chart(trendsCtx, {
-            type: 'line',
-            data: {
-                labels: @json($readingTrends->pluck('date')),
-                datasets: [{
-                    label: 'Reading Activity',
-                    data: @json($readingTrends->pluck('count')),
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    tension: 0.4
-                }, {
-                    label: 'Downloads',
-                    data: @json($downloadTrends->pluck('count')),
-                    borderColor: '#28a745',
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
-
-    // Category Chart
-    const categoryCtx = document.getElementById('categoryChart');
-    if (categoryCtx) {
-        new Chart(categoryCtx, {
-            type: 'doughnut',
-            data: {
-                labels: @json($categoryStats->pluck('name')),
-                datasets: [{
-                    data: @json($categoryStats->pluck('books_count')),
-                    backgroundColor: [
-                        '#007bff', '#28a745', '#ffc107', '#17a2b8', '#6c757d'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    }
-});
-
-// Helper functions for activity display
-function getActivityColor(action) {
-    const colors = {
-        'login': 'success',
-        'download': 'primary',
-        'register': 'info',
-        'review': 'warning',
-        'favorite': 'danger'
-    };
-    return colors[action] || 'secondary';
-}
-
-function getActivityTitle(action) {
-    const titles = {
-        'login': 'User Login',
-        'download': 'Book Downloaded',
-        'register': 'New User',
-        'review': 'Review Posted',
-        'favorite': 'Book Favorited'
-    };
-    return titles[action] || 'Activity';
-}
-
-function getActivityDescription(activity) {
-    switch(activity.action) {
-        case 'download':
-            return `downloaded "${activity.book->title ?? 'a book'}"`;
-        case 'review':
-            return `reviewed "${activity.book->title ?? 'a book'}"`;
-        case 'favorite':
-            return `favorited "${activity.book->title ?? 'a book'}"`;
-        default:
-            return activity.description || 'performed an action';
-    }
-}
-</script>
-@endpush
-@endsection
-                            </div>
-                        </div>
-
-                        <div class="activity-item">
-                            <div class="activity-dot bg-info"></div>
-                            <div class="activity-content">
-                                <h6 class="activity-title">System update</h6>
-                                <p class="activity-description">Security patches applied</p>
-                                <small class="activity-time">2 days ago</small>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -591,56 +213,45 @@ function getActivityDescription(activity) {
     <!-- User Engagement Metrics -->
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-bar me-2"></i>
-                        User Engagement Metrics
-                    </h5>
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">User Engagement Metrics</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3">
-                            <div class="engagement-metric">
-                                <h4 class="metric-value">4.2</h4>
-                                <p class="metric-label">Avg. Reading Time (hours)</p>
-                                <div class="metric-progress">
-                                    <div class="progress">
-                                        <div class="progress-bar bg-primary" style="width: 70%"></div>
-                                    </div>
+                        <div class="col-md-3 mb-4">
+                            <div class="metric-card text-center">
+                                <div class="metric-value text-primary fw-bold mb-2">4.2</div>
+                                <div class="metric-label text-muted mb-2">Avg. Reading Time (hours)</div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: 70%"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="engagement-metric">
-                                <h4 class="metric-value">68%</h4>
-                                <p class="metric-label">Completion Rate</p>
-                                <div class="metric-progress">
-                                    <div class="progress">
-                                        <div class="progress-bar bg-success" style="width: 68%"></div>
-                                    </div>
+                        <div class="col-md-3 mb-4">
+                            <div class="metric-card text-center">
+                                <div class="metric-value text-success fw-bold mb-2">68%</div>
+                                <div class="metric-label text-muted mb-2">Completion Rate</div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-success" style="width: 68%"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="engagement-metric">
-                                <h4 class="metric-value">3.8</h4>
-                                <p class="metric-label">Avg. Rating</p>
-                                <div class="metric-progress">
-                                    <div class="progress">
-                                        <div class="progress-bar bg-warning" style="width: 76%"></div>
-                                    </div>
+                        <div class="col-md-3 mb-4">
+                            <div class="metric-card text-center">
+                                <div class="metric-value text-warning fw-bold mb-2">3.8</div>
+                                <div class="metric-label text-muted mb-2">Avg. Rating</div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" style="width: 76%"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="engagement-metric">
-                                <h4 class="metric-value">92%</h4>
-                                <p class="metric-label">User Satisfaction</p>
-                                <div class="metric-progress">
-                                    <div class="progress">
-                                        <div class="progress-bar bg-info" style="width: 92%"></div>
-                                    </div>
+                        <div class="col-md-3 mb-4">
+                            <div class="metric-card text-center">
+                                <div class="metric-value text-info fw-bold mb-2">92%</div>
+                                <div class="metric-label text-muted mb-2">User Satisfaction</div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-info" style="width: 92%"></div>
                                 </div>
                             </div>
                         </div>
@@ -651,3 +262,77 @@ function getActivityDescription(activity) {
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Activity Chart
+const activityCtx = document.getElementById('activityChart').getContext('2d');
+new Chart(activityCtx, {
+    type: 'line',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+            label: 'User Activity',
+            data: [65, 78, 90, 81, 96, 105],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            tension: 0.4
+        }, {
+            label: 'Downloads',
+            data: [28, 48, 40, 59, 76, 87],
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            }
+        }
+    }
+});
+
+// Content Distribution Chart
+const contentCtx = document.getElementById('contentChart').getContext('2d');
+new Chart(contentCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Fiction', 'Non-Fiction', 'Educational', 'Technical', 'Other'],
+        datasets: [{
+            data: [30, 25, 20, 15, 10],
+            backgroundColor: [
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+            }
+        }
+    }
+});
+
+// Export Analytics
+function exportAnalytics() {
+    window.location.href = '/admin/analytics/export';
+}
+
+// Refresh Analytics
+function refreshAnalytics() {
+    window.location.reload();
+}
+</script>
+@endpush

@@ -13,7 +13,7 @@
                     <h5 class="card-title mb-0">Edit Book Information</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('books.update', $book->id) }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('author.books.update', $book->id) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
                         <div class="row">
@@ -119,7 +119,7 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-2"></i>Update Book
                             </button>
-                            <a href="{{ route('books.index') }}" class="btn btn-secondary">
+                            <a href="{{ route('author.books.index') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Cancel
                             </a>
                         </div>
@@ -163,10 +163,10 @@
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <a href="{{ route('books.show', $book->id) }}" class="btn btn-outline-primary btn-sm">
+                        <a href="{{ route('author.books.show', $book->id) }}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-eye me-1"></i>View Book
                         </a>
-                        <form action="{{ route('books.destroy', $book->id) }}" method="POST" style="display: inline;">
+                        <form action="{{ route('author.books.destroy', $book->id) }}" method="POST" style="display: inline;">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this book?')">

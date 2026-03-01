@@ -50,9 +50,6 @@ Route::controller(RegisterController::class)->group(function () {
 Route::get('/read/{id}', [LibraryController::class, 'read'])->name('book.read');
 Route::get('/download/{id}', [LibraryController::class, 'download'])->name('book.download');
 
-// =====================================================
-// AUTHENTICATED USER ROUTES (all logged-in users)
-// =====================================================
 Route::middleware('auth')->group(function () {
     // Personal pages
     Route::get('/my-library', [LibraryController::class, 'index'])->name('user.library');
@@ -70,9 +67,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [UserController::class, 'settings'])->name('user.settings');
 });
 
-// =====================================================
-// AUTHOR ROUTES (Author role access only)
-// =====================================================
 Route::middleware(['auth', 'role:author'])->prefix('author')->name('author.')->group(function () {
     // Author Dashboard
     Route::get('/dashboard', [AdminController::class, 'authorDashboard'])->name('dashboard');
@@ -85,29 +79,52 @@ Route::middleware(['auth', 'role:author'])->prefix('author')->name('author.')->g
     Route::get('/favorites', [AdminController::class, 'authorFavorites'])->name('favorites');
     Route::get('/downloads', [AdminController::class, 'authorDownloads'])->name('downloads');
     Route::get('/library', [AdminController::class, 'authorLibrary'])->name('library');
+    // Author Categories Routes
+    Route::get('/categories', [AdminController::class, 'authorCategories'])->name('categories');
+    Route::get('/categories/{category}', [AdminController::class, 'showCategory'])->name('categories.show');
+    Route::get('/categories/{category}/edit', [AdminController::class, 'editCategory'])->name('categories.edit');
+    Route::post('/categories', [AdminController::class, 'storeCategory'])->name('categories.store');
+    Route::put('/categories/{category}', [AdminController::class, 'updateCategory'])->name('categories.update');
+    Route::delete('/categories/{category}', [AdminController::class, 'deleteCategory'])->name('categories.delete');
+    Route::get('/categories/export', [AdminController::class, 'exportCategories'])->name('categories.export');
+    
+    // Author Tags Routes
+    Route::get('/tags', [AdminController::class, 'authorTags'])->name('tags');
+    Route::get('/tags/{tag}', [AdminController::class, 'showTag'])->name('tags.show');
+    Route::get('/tags/{tag}/edit', [AdminController::class, 'editTag'])->name('tags.edit');
+    Route::post('/tags', [AdminController::class, 'storeTag'])->name('tags.store');
+    Route::put('/tags/{tag}', [AdminController::class, 'updateTag'])->name('tags.update');
+    Route::delete('/tags/{tag}', [AdminController::class, 'deleteTag'])->name('tags.delete');
+    Route::get('/tags/export', [AdminController::class, 'exportTags'])->name('tags.export');
     Route::get('/reading-history', [AdminController::class, 'authorReadingHistory'])->name('reading-history');
+    Route::get('/reading-history/{readingHistory}', [AdminController::class, 'showReadingHistory'])->name('reading-history.show');
+    Route::get('/reading-history/{readingHistory}/edit', [AdminController::class, 'editReadingHistory'])->name('reading-history.edit');
+    Route::post('/reading-history', [AdminController::class, 'storeReadingHistory'])->name('reading-history.store');
+    Route::put('/reading-history/{readingHistory}', [AdminController::class, 'updateReadingHistory'])->name('reading-history.update');
+    Route::delete('/reading-history/{readingHistory}', [AdminController::class, 'deleteReadingHistory'])->name('reading-history.delete');
+    Route::get('/reading-history/export', [AdminController::class, 'exportReadingHistory'])->name('reading-history.export');
     Route::get('/my-favorites', [AdminController::class, 'authorMyFavorites'])->name('my-favorites');
     
-    // Author Book Management Routes
+    // Author Book Management Routes (AdminController - for author dashboard)
+    Route::get('/books', [AdminController::class, 'authorBooksIndex'])->name('books.index');
+    Route::get('/books/published', [AdminController::class, 'authorBooksPublished'])->name('books.published');
+    Route::get('/books/drafts', [AdminController::class, 'authorBooksDrafts'])->name('books.drafts');
+    Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
+    Route::get('/books/{id}/details', [AdminController::class, 'getBookDetails'])->name('books.details');
+    
+    // Author Book CRUD Routes (BookController - for actual book operations)
     Route::prefix('books')->name('books.')->group(function () {
-        Route::get('/', [BookController::class, 'index'])->name('index');
-        Route::get('/create', [BookController::class, 'create'])->name('create');
         Route::post('/', [BookController::class, 'store'])->name('store');
         Route::get('/{id}', [BookController::class, 'show'])->name('show');
         Route::get('/{id}/edit', [BookController::class, 'edit'])->name('edit');
         Route::put('/{id}', [BookController::class, 'update'])->name('update');
         Route::delete('/{id}', [BookController::class, 'destroy'])->name('destroy');
-        Route::get('/published', [BookController::class, 'publishedBooks'])->name('published');
-        Route::get('/drafts', [BookController::class, 'draftBooks'])->name('drafts');
         Route::post('/{id}/publish', [BookController::class, 'publishBook'])->name('publish');
         Route::post('/{id}/unpublish', [BookController::class, 'unpublishBook'])->name('unpublish');
         Route::post('/{id}/duplicate', [BookController::class, 'duplicateBook'])->name('duplicate');
     });
 });
 
-// =====================================================
-// ADMIN ROUTES (Admin role access only)
-// =====================================================
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     // Admin Dashboard
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
@@ -129,7 +146,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::prefix('authors')->name('authors.')->group(function () {
         Route::get('/', [AdminController::class, 'authors'])->name('index');
         Route::post('/', [AdminController::class, 'storeAuthor'])->name('store');
+        Route::get('/{id}', [AdminController::class, 'showAuthor'])->name('show');
         Route::get('/{id}/edit', [AdminController::class, 'editAuthor'])->name('edit');
+        Route::get('/{id}/details', [AdminController::class, 'getAuthorDetails'])->name('details');
         Route::put('/{id}', [AdminController::class, 'updateAuthor'])->name('update');
         Route::delete('/{id}', [AdminController::class, 'deleteAuthor'])->name('delete');
         Route::delete('/bulk-delete', [AdminController::class, 'bulkDeleteAuthors'])->name('bulk-delete');
@@ -176,14 +195,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Other Admin Routes
     Route::get('/tags', [AdminController::class, 'tags'])->name('tags');
     Route::post('/tags', [AdminController::class, 'storeTag'])->name('tags.store');
+    Route::get('/tags/{id}', [AdminController::class, 'showTag'])->name('tags.show');
     Route::get('/tags/{id}/edit', [AdminController::class, 'editTag'])->name('tags.edit');
     Route::put('/tags/{id}', [AdminController::class, 'updateTag'])->name('tags.update');
     Route::delete('/tags/{id}', [AdminController::class, 'deleteTag'])->name('tags.delete');
+    Route::post('/tags/bulk-info', [AdminController::class, 'bulkTagInfo'])->name('tags.bulk-info');
+    Route::delete('/tags/bulk-delete', [AdminController::class, 'bulkDeleteTags'])->name('tags.bulk-delete');
     Route::get('/reviews', [AdminController::class, 'reviews'])->name('reviews');
     Route::post('/reviews', [AdminController::class, 'storeReview'])->name('reviews.store');
     Route::get('/reviews/{id}/edit', [AdminController::class, 'editReview'])->name('reviews.edit');
     Route::put('/reviews/{id}', [AdminController::class, 'updateReview'])->name('reviews.update');
     Route::get('/reviews/{id}', [AdminController::class, 'viewReview'])->name('reviews.view');
+    
     Route::post('/reviews/{id}/approve', [AdminController::class, 'approveReview'])->name('reviews.approve');
     Route::post('/reviews/{id}/reject', [AdminController::class, 'rejectReview'])->name('reviews.reject');
     Route::delete('/reviews/{id}', [AdminController::class, 'deleteReview'])->name('reviews.delete');
@@ -192,13 +215,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     
     Route::get('/activity', [AdminController::class, 'activity'])->name('activity');
     Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
+    Route::get('/analytics/export', [AdminController::class, 'exportAnalytics'])->name('analytics.export');
     Route::get('/show-all-data', [AdminController::class, 'showAllData'])->name('show-all-data');
     
     Route::get('/reading-progress', [AdminController::class, 'readingProgress'])->name('reading-progress');
     Route::post('/reading-progress', [AdminController::class, 'storeReadingProgress'])->name('reading-progress.store');
+    Route::get('/reading-progress/{id}', [AdminController::class, 'showReadingProgress'])->name('reading-progress.show');
     Route::get('/reading-progress/{id}/edit', [AdminController::class, 'editReadingProgress'])->name('reading-progress.edit');
     Route::put('/reading-progress/{id}', [AdminController::class, 'updateReadingProgress'])->name('reading-progress.update');
-    Route::get('/reading-progress/{id}', [AdminController::class, 'viewReadingProgress'])->name('reading-progress.view');
     Route::delete('/reading-progress/{id}', [AdminController::class, 'deleteReadingProgress'])->name('reading-progress.delete');
     Route::delete('/reading-progress/bulk-delete', [AdminController::class, 'bulkDeleteReadingProgress'])->name('reading-progress.bulk-delete');
     Route::get('/reading-progress/export', [AdminController::class, 'exportReadingProgress'])->name('reading-progress.export');
@@ -209,14 +233,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/favorites/{id}', [AdminController::class, 'destroyFavorite'])->name('favorites.destroy');
     Route::delete('/favorites/bulk-delete', [AdminController::class, 'bulkDeleteFavorites'])->name('favorites.bulk-delete');
     Route::get('/favorites/export', [AdminController::class, 'exportFavorites'])->name('favorites.export');
-    Route::get('/reading-history', [AdminController::class, 'readingHistory'])->name('reading-history');
-    Route::get('/reading-history/{id}', [AdminController::class, 'showReadingProgress'])->name('reading-history.show');
-    Route::post('/reading-history/add-progress', [AdminController::class, 'storeReadingProgress'])->name('reading-history.add-progress');
-    Route::post('/reading-history/add-to-favorites', [AdminController::class, 'addToFavorites'])->name('reading-history.add-to-favorites');
-    Route::get('/reading-history/export', [AdminController::class, 'exportReadingHistory'])->name('reading-history.export');
     Route::get('/downloads', [AdminController::class, 'downloads'])->name('downloads');
+    Route::get('/downloads/{id}', [AdminController::class, 'showDownload'])->name('downloads.show');
+    Route::post('/downloads/{id}/re-download', [AdminController::class, 'reDownload'])->name('downloads.re-download');
+    Route::delete('/downloads/{id}', [AdminController::class, 'deleteDownload'])->name('downloads.delete');
     Route::get('/statistics', [AdminController::class, 'statistics'])->name('statistics');
     Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
+    Route::get('/reports/{id}/view', [AdminController::class, 'viewReport'])->name('reports.view');
+    Route::get('/reports/{id}/download', [AdminController::class, 'downloadReport'])->name('reports.download');
+    Route::get('/reports/{id}/share', [AdminController::class, 'shareReport'])->name('reports.share');
     Route::get('/export', [AdminController::class, 'export'])->name('export');
     Route::get('/appearance', [AdminController::class, 'appearance'])->name('appearance');
     Route::post('/appearance/save', [AdminController::class, 'saveAppearance'])->name('appearance.save');

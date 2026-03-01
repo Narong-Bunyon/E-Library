@@ -429,10 +429,10 @@
                         <i class="fas fa-book"></i>
                         All Books
                     </a>
-                    <a href="{{ route('author.books.create') }}" class="nav-link {{ request()->routeIs('author.books.create') ? 'active' : '' }}">
+                    <!-- <a href="{{ route('author.books.create') }}" class="nav-link {{ request()->routeIs('author.books.create') ? 'active' : '' }}">
                         <i class="fas fa-plus-circle"></i>
                         Add New Book
-                    </a>
+                    </a> -->
                     <a href="{{ route('author.books.published') }}" class="nav-link {{ request()->routeIs('author.books.published') ? 'active' : '' }}">
                         <i class="fas fa-check-circle"></i>
                         Published Books
@@ -449,11 +449,11 @@
 
                 <div class="nav-section">
                     <div class="nav-title">Content Management</div>
-                    <a href="{{ route('author.library') }}" class="nav-link {{ request()->routeIs('author.library') ? 'active' : '' }}">
+                    <a href="{{ route('author.categories') }}" class="nav-link {{ request()->routeIs('author.categories') ? 'active' : '' }}">
                         <i class="fas fa-layer-group"></i>
                         Categories
                     </a>
-                    <a href="{{ route('author.library') }}" class="nav-link {{ request()->routeIs('author.library') ? 'active' : '' }}">
+                    <a href="{{ route('author.tags') }}" class="nav-link {{ request()->routeIs('author.tags') ? 'active' : '' }}">
                         <i class="fas fa-tags"></i>
                         Tags
                     </a>
@@ -501,10 +501,10 @@
                         <i class="fas fa-user"></i>
                         My Profile
                     </a>
-                    <a href="{{ route('author.settings') }}" class="nav-link {{ request()->routeIs('author.settings') ? 'active' : '' }}">
+                    <!-- <a href="{{ route('author.settings') }}" class="nav-link {{ request()->routeIs('author.settings') ? 'active' : '' }}">
                         <i class="fas fa-cog"></i>
                         Settings
-                    </a>
+                    </a> -->
                     <a href="{{ route('logout') }}" class="nav-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                         <i class="fas fa-sign-out-alt"></i>
                         Logout

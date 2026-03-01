@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Book;
 use App\Models\Category;
 
@@ -77,10 +79,10 @@ class BookController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category_id' => 'nullable|exists:categories,id',
+            'description' => 'required|string|min:50',
+            'category_id' => 'nullable|exists:category,id',
             'isbn' => 'nullable|string|max:20',
             'publisher' => 'nullable|string|max:255',
             'published_date' => 'nullable|date',
@@ -89,30 +91,73 @@ class BookController extends Controller
             'excerpt' => 'nullable|string|max:500',
             'cover_image' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
             'file_path' => 'nullable|file|mimes:pdf,epub,mobi|max:10240',
-            'access_level' => 'required|in:public,private,premium',
+            'access_level' => 'nullable|in:public,private,premium',
             'status' => 'required|integer|in:0,1',
+        ], [
+            'title.required' => 'Book title is required.',
+            'description.required' => 'Book description is required.',
+            'description.min' => 'Description must be at least 50 characters.',
+            'category_id.exists' => 'Selected category is invalid.',
+            'cover_image.image' => 'Cover image must be a valid image file.',
+            'cover_image.mimes' => 'Cover image must be a JPEG, JPG, PNG, or GIF file.',
+            'cover_image.max' => 'Cover image must not exceed 2MB.',
+            'file_path.file' => 'Book file must be a valid file.',
+            'file_path.mimes' => 'Book file must be a PDF, EPUB, or MOBI file.',
+            'file_path.max' => 'Book file must not exceed 10MB.',
+            'pages.min' => 'Pages must be at least 1.',
+            'status.required' => 'Status is required.',
+            'status.in' => 'Status must be either Draft or Published.',
         ]);
 
-        $bookData = $request->except(['cover_image', 'file_path']);
-        $bookData['author_id'] = auth()->user()->id;
-
-        // Handle cover image upload
-        if ($request->hasFile('cover_image')) {
-            $coverImage = $request->file('cover_image');
-            $coverPath = $coverImage->store('covers', 'public');
-            $bookData['cover_image'] = $coverPath;
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        // Handle book file upload
-        if ($request->hasFile('file_path')) {
-            $bookFile = $request->file('file_path');
-            $filePath = $bookFile->store('books', 'public');
-            $bookData['file_path'] = $filePath;
+        try {
+            $bookData = $request->except(['cover_image', 'file_path']);
+            $bookData['author_id'] = auth()->user()->id;
+            
+            // Convert access_level string to integer
+            $accessLevelMap = [
+                'public' => 0,
+                'private' => 1, 
+                'premium' => 2
+            ];
+            $bookData['access_level'] = $accessLevelMap[$request->access_level] ?? 0;
+
+            // Handle cover image upload
+            if ($request->hasFile('cover_image')) {
+                $coverImage = $request->file('cover_image');
+                $coverPath = $coverImage->store('covers', 'public');
+                $bookData['cover_image'] = $coverPath;
+            }
+
+            // Handle book file upload
+            if ($request->hasFile('file_path')) {
+                $bookFile = $request->file('file_path');
+                $filePath = $bookFile->store('books', 'public');
+                $bookData['file_path'] = $filePath;
+            }
+
+            $book = Book::create($bookData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Book created successfully!',
+                'book' => $book->load('category')
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error creating book: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating book: ' . $e->getMessage()
+            ], 500);
         }
-
-        Book::create($bookData);
-
-        return redirect()->route('books.index')->with('success', 'Book created successfully!');
     }
 
     /**
@@ -151,10 +196,10 @@ class BookController extends Controller
             ->where('author_id', auth()->user()->id)
             ->firstOrFail();
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category_id' => 'nullable|exists:categories,id',
+            'description' => 'required|string|min:50',
+            'category_id' => 'nullable|exists:category,id',
             'isbn' => 'nullable|string|max:20',
             'publisher' => 'nullable|string|max:255',
             'published_date' => 'nullable|date',
@@ -163,29 +208,82 @@ class BookController extends Controller
             'excerpt' => 'nullable|string|max:500',
             'cover_image' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
             'file_path' => 'nullable|file|mimes:pdf,epub,mobi|max:10240',
-            'access_level' => 'required|in:public,private,premium',
+            'access_level' => 'nullable|in:public,private,premium',
             'status' => 'required|integer|in:0,1',
+        ], [
+            'title.required' => 'Book title is required.',
+            'description.required' => 'Book description is required.',
+            'description.min' => 'Description must be at least 50 characters.',
+            'category_id.exists' => 'Selected category is invalid.',
+            'cover_image.image' => 'Cover image must be a valid image file.',
+            'cover_image.mimes' => 'Cover image must be a JPEG, JPG, PNG, or GIF file.',
+            'cover_image.max' => 'Cover image must not exceed 2MB.',
+            'file_path.file' => 'Book file must be a valid file.',
+            'file_path.mimes' => 'Book file must be a PDF, EPUB, or MOBI file.',
+            'file_path.max' => 'Book file must not exceed 10MB.',
+            'pages.min' => 'Pages must be at least 1.',
+            'status.required' => 'Status is required.',
+            'status.in' => 'Status must be either Draft or Published.',
         ]);
 
-        $bookData = $request->except(['cover_image', 'file_path']);
-
-        // Handle cover image upload
-        if ($request->hasFile('cover_image')) {
-            $coverImage = $request->file('cover_image');
-            $coverPath = $coverImage->store('covers', 'public');
-            $bookData['cover_image'] = $coverPath;
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        // Handle book file upload
-        if ($request->hasFile('file_path')) {
-            $bookFile = $request->file('file_path');
-            $filePath = $bookFile->store('books', 'public');
-            $bookData['file_path'] = $filePath;
+        try {
+            $bookData = $request->except(['cover_image', 'file_path']);
+            
+            // Convert access_level string to integer
+            $accessLevelMap = [
+                'public' => 0,
+                'private' => 1, 
+                'premium' => 2
+            ];
+            $bookData['access_level'] = $accessLevelMap[$request->access_level] ?? 0;
+
+            // Handle cover image upload
+            if ($request->hasFile('cover_image')) {
+                // Delete old cover image if exists
+                if ($book->cover_image && Storage::disk('public')->exists($book->cover_image)) {
+                    Storage::disk('public')->delete($book->cover_image);
+                }
+                
+                $coverImage = $request->file('cover_image');
+                $coverPath = $coverImage->store('covers', 'public');
+                $bookData['cover_image'] = $coverPath;
+            }
+
+            // Handle book file upload
+            if ($request->hasFile('file_path')) {
+                // Delete old file if exists
+                if ($book->file_path && Storage::disk('public')->exists($book->file_path)) {
+                    Storage::disk('public')->delete($book->file_path);
+                }
+                
+                $bookFile = $request->file('file_path');
+                $filePath = $bookFile->store('books', 'public');
+                $bookData['file_path'] = $filePath;
+            }
+
+            $book->update($bookData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Book updated successfully!',
+                'book' => $book->load('category')
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error updating book: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating book: ' . $e->getMessage()
+            ], 500);
         }
-
-        $book->update($bookData);
-
-        return redirect()->route('books.index')->with('success', 'Book updated successfully!');
     }
 
     /**
@@ -199,7 +297,7 @@ class BookController extends Controller
 
         $book->delete();
 
-        return redirect()->route('books.index')->with('success', 'Book deleted successfully!');
+        return redirect()->route('author.books.index')->with('success', 'Book deleted successfully!');
     }
 
     /**
@@ -347,7 +445,7 @@ class BookController extends Controller
 
         $book->update(['status' => 1]);
 
-        return redirect()->route('books.index')->with('success', 'Book published successfully!');
+        return redirect()->route('author.books.index')->with('success', 'Book published successfully!');
     }
 
     /**
@@ -361,7 +459,7 @@ class BookController extends Controller
 
         $book->update(['status' => 0]);
 
-        return redirect()->route('books.index')->with('success', 'Book unpublished successfully!');
+        return redirect()->route('author.books.index')->with('success', 'Book unpublished successfully!');
     }
 
     /**
@@ -378,6 +476,6 @@ class BookController extends Controller
         $newBook->status = 0; // Set as draft
         $newBook->save();
 
-        return redirect()->route('books.index')->with('success', 'Book duplicated successfully!');
+        return redirect()->route('author.books.index')->with('success', 'Book duplicated successfully!');
     }
 }

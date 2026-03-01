@@ -111,14 +111,15 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @forelse ($downloads as $download)
                         <tr>
-                            <td><input type="checkbox" class="form-check-input"></td>
+                            <td><input type="checkbox" class="form-check-input" value="{{ $download->id }}"></td>
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <div class="user-avatar-sm me-2">A</div>
+                                    <div class="user-avatar-sm me-2">{{ substr($download->user->name ?? 'U', 0, 1) }}</div>
                                     <div>
-                                        <div class="fw-semibold">Alice Reader</div>
-                                        <small class="text-muted">alice@elibrary.com</small>
+                                        <div class="fw-semibold">{{ $download->user->name ?? 'N/A' }}</div>
+                                        <small class="text-muted">{{ $download->user->email ?? 'N/A' }}</small>
                                     </div>
                                 </div>
                             </td>
@@ -128,234 +129,36 @@
                                         <i class="fas fa-book text-primary"></i>
                                     </div>
                                     <div>
-                                        <div class="fw-semibold">Advanced Laravel Development</div>
-                                        <small class="text-muted">by John Author</small>
+                                        <div class="fw-semibold">{{ $download->book->title ?? 'N/A' }}</div>
+                                        <small class="text-muted">{{ $download->book->author->name ?? 'N/A' }}</small>
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="badge bg-primary">PDF</span></td>
-                            <td>15.2 MB</td>
-                            <td>2 hours ago</td>
-                            <td><span class="badge bg-success">Completed</span></td>
+                            <td><span class="badge bg-primary">{{ strtoupper($download->file_type ?? 'PDF') }}</span></td>
+                            <td>{{ $download->file_size ?? '0 MB' }}</td>
+                            <td>{{ $download->created_at ? \Carbon\Carbon::parse($download->created_at)->diffForHumans() : 'N/A' }}</td>
+                            <td><span class="badge bg-{{ $download->status == 'completed' ? 'success' : ($download->status == 'failed' ? 'danger' : 'warning') }}">{{ ucfirst($download->status ?? 'Unknown') }}</span></td>
                             <td>
                                 <div class="table-actions">
-                                    <button class="icon-btn text-info" title="View Details">
+                                    <button class="icon-btn text-info" title="View Details" onclick="viewDownloadDetails({{ $download->id }})">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="icon-btn text-warning" title="Re-download">
+                                    <button class="icon-btn text-warning" title="Re-download" onclick="reDownload({{ $download->id }})">
                                         <i class="fas fa-redo"></i>
                                     </button>
-                                    <button class="icon-btn text-danger" title="Delete">
+                                    <button class="icon-btn text-danger" title="Delete" onclick="deleteDownload({{ $download->id }}, '{{ $download->book->title ?? 'Unknown Book' }}', '{{ $download->user->name ?? 'Unknown User' }}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             </td>
                         </tr>
-
+                        @empty
                         <tr>
-                            <td><input type="checkbox" class="form-check-input"></td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="user-avatar-sm me-2">B</div>
-                                    <div>
-                                        <div class="fw-semibold">Bob Reader</div>
-                                        <small class="text-muted">bob@elibrary.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="book-cover-sm me-2">
-                                        <i class="fas fa-book text-success"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold">Modern Web Design</div>
-                                        <small class="text-muted">by Jane Designer</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-success">EPUB</span></td>
-                            <td>8.7 MB</td>
-                            <td>5 hours ago</td>
-                            <td><span class="badge bg-success">Completed</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="icon-btn text-info" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="icon-btn text-warning" title="Re-download">
-                                        <i class="fas fa-redo"></i>
-                                    </button>
-                                    <button class="icon-btn text-danger" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
+                            <td colspan="8" class="text-center py-4">
+                                <p class="text-muted mb-0">No downloads found.</p>
                             </td>
                         </tr>
-
-                        <tr>
-                            <td><input type="checkbox" class="form-check-input"></td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="user-avatar-sm me-2">C</div>
-                                    <div>
-                                        <div class="fw-semibold">Charlie Reader</div>
-                                        <small class="text-muted">charlie@elibrary.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="book-cover-sm me-2">
-                                        <i class="fas fa-book text-warning"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold">Database Management</div>
-                                        <small class="text-muted">by Mike Developer</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-info">MOBI</span></td>
-                            <td>12.4 MB</td>
-                            <td>1 day ago</td>
-                            <td><span class="badge bg-success">Completed</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="icon-btn text-info" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="icon-btn text-warning" title="Re-download">
-                                        <i class="fas fa-redo"></i>
-                                    </button>
-                                    <button class="icon-btn text-danger" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td><input type="checkbox" class="form-check-input"></td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="user-avatar-sm me-2">D</div>
-                                    <div>
-                                        <div class="fw-semibold">Diana Reader</div>
-                                        <small class="text-muted">diana@elibrary.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="book-cover-sm me-2">
-                                        <i class="fas fa-book text-info"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold">JavaScript Fundamentals</div>
-                                        <small class="text-muted">by Sarah Developer</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-warning">ZIP</span></td>
-                            <td>45.8 MB</td>
-                            <td>2 days ago</td>
-                            <td><span class="badge bg-warning">In Progress</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="icon-btn text-info" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="icon-btn text-success" title="Resume Download">
-                                        <i class="fas fa-play"></i>
-                                    </button>
-                                    <button class="icon-btn text-danger" title="Cancel Download">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td><input type="checkbox" class="form-check-input"></td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="user-avatar-sm me-2">E</div>
-                                    <div>
-                                        <div class="fw-semibold">Eva Reader</div>
-                                        <small class="text-muted">eva@elibrary.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="book-cover-sm me-2">
-                                        <i class="fas fa-book text-secondary"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold">CSS Masterclass</div>
-                                        <small class="text-muted">by Tom Designer</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-primary">PDF</span></td>
-                            <td>22.1 MB</td>
-                            <td>3 days ago</td>
-                            <td><span class="badge bg-danger">Failed</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="icon-btn text-info" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="icon-btn text-warning" title="Retry Download">
-                                        <i class="fas fa-redo"></i>
-                                    </button>
-                                    <button class="icon-btn text-danger" title="Clear Failed">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td><input type="checkbox" class="form-check-input"></td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="user-avatar-sm me-2">F</div>
-                                    <div>
-                                        <div class="fw-semibold">Frank Reader</div>
-                                        <small class="text-muted">frank@elibrary.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="book-cover-sm me-2">
-                                        <i class="fas fa-file-archive text-warning"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold">Complete Library Pack</div>
-                                        <small class="text-muted">Multiple Books</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-secondary">ZIP</span></td>
-                            <td>156.7 MB</td>
-                            <td>1 week ago</td>
-                            <td><span class="badge bg-success">Completed</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="icon-btn text-info" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="icon-btn text-warning" title="Re-download">
-                                        <i class="fas fa-redo"></i>
-                                    </button>
-                                    <button class="icon-btn text-danger" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -466,4 +269,184 @@
         </div>
     </div>
 </div>
+
+<!-- View Download Details Modal -->
+<div class="modal fade" id="viewDownloadModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye text-info me-2"></i>
+                    Download Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="downloadDetails">
+                <!-- Details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Download Modal -->
+<div class="modal fade" id="deleteDownloadModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Confirm Delete Download
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <i class="fas fa-trash text-danger fa-3x mb-3"></i>
+                    <h6 id="deleteDownloadMessage">Are you sure? You want to delete this download?</h6>
+                    <p id="deleteDownloadDescription">This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button class="btn btn-danger" id="confirmDeleteDownloadBtn">
+                    <i class="fas fa-trash me-2"></i>Delete Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+// View download details
+function viewDownloadDetails(id) {
+    fetch(`/admin/downloads/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.success) {
+                const details = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>User:</strong> ${data.download.user?.name || 'N/A'} (${data.download.user?.email || 'N/A'})<br>
+                            <strong>Book:</strong> ${data.download.book?.title || 'N/A'}<br>
+                            <strong>Author:</strong> ${data.download.book?.author?.name || 'N/A'}<br>
+                            <strong>File Type:</strong> ${data.download.file_type || 'N/A'}<br>
+                            <strong>File Size:</strong> ${data.download.file_size || 'N/A'}<br>
+                            <strong>Status:</strong> ${data.download.status || 'N/A'}<br>
+                            <strong>Download Date:</strong> ${data.download.created_at ? new Date(data.download.created_at).toLocaleString() : 'N/A'}<br>
+                            <strong>IP Address:</strong> ${data.download.ip_address || 'N/A'}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>User Agent:</strong><br>
+                            <p class="text-muted small">${data.download.user_agent || 'N/A'}</p>
+                            <strong>Download Path:</strong><br>
+                            <p class="text-muted small">${data.download.file_path || 'N/A'}</p>
+                            <strong>Reference:</strong><br>
+                            <p class="text-muted small">${data.download.reference_id || 'N/A'}</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('downloadDetails').innerHTML = details;
+                new bootstrap.Modal(document.getElementById('viewDownloadModal')).show();
+            } else {
+                showNotification('Error loading download details', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching download details:', error);
+            showNotification('Error loading download details', 'error');
+        });
+}
+
+// Re-download function
+function reDownload(id) {
+    if (confirm('Are you sure you want to re-download this file?')) {
+        fetch(`/admin/downloads/${id}/re-download`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Download started successfully', 'success');
+                // Optionally trigger file download
+                if (data.download_url) {
+                    window.location.href = data.download_url;
+                }
+            } else {
+                showNotification(data.message || 'Error starting download', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error starting download:', error);
+            showNotification('Error starting download', 'error');
+        });
+    }
+}
+
+// Delete download with modal
+function deleteDownload(id, bookTitle, userName) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteDownloadModal'));
+    document.getElementById('deleteDownloadMessage').textContent = 
+        `Are you sure? You want to delete this download?`;
+    document.getElementById('deleteDownloadDescription').textContent = 
+        `The download for "${bookTitle}" by ${userName} will be permanently deleted. This action cannot be undone.`;
+    
+    document.getElementById('confirmDeleteDownloadBtn').onclick = function() {
+        modal.hide();
+        performDeleteDownload(id);
+    };
+    
+    modal.show();
+}
+
+// Perform the actual delete
+function performDeleteDownload(id) {
+    fetch(`/admin/downloads/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Download deleted successfully', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Error deleting download', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting download:', error);
+        showNotification('Error deleting download', 'error');
+    });
+}
+
+// Notification function (if not already defined)
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+</script>
+@endpush
+
 @endsection

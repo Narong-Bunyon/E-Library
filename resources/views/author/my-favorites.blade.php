@@ -132,77 +132,62 @@
         @endforelse
     </div>
     
-    <!-- Favorite Categories -->
-    <div class="row mt-4">
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Favorite Categories</h5>
-                </div>
-                <div class="card-body">
-                    @forelse ($favoriteCategories as $category)
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="me-2">
-                            <i class="fas fa-layer-group text-primary"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="fw-semibold">{{ $category->name }}</div>
-                            <small class="text-muted">{{ $category->favorites_count }} books</small>
-                        </div>
-                    </div>
-                    @empty
-                    <p class="text-muted">No data available.</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Recent Favorites</h5>
-                </div>
-                <div class="card-body">
-                    @forelse ($recentFavorites as $favorite)
-                    <div class="d-flex align-items-center mb-3">
-                        @if($favorite->book->cover_image)
-                            <img src="{{ asset('storage/' . $favorite->book->cover_image) }}" alt="{{ $favorite->book->title }}" style="width: 30px; height: 40px; object-fit: cover; margin-right: 10px;">
-                        @else
-                            <div style="width: 30px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold; margin-right: 10px;">
-                                {{ strtoupper(substr($favorite->book->title, 0, 1)) }}
-                            </div>
-                        @endif
-                        <div class="flex-grow-1">
-                            <div class="fw-semibold">{{ $favorite->book->title }}</div>
-                            <small class="text-muted">Favorited {{ $favorite->created_at->diffForHumans() }}</small>
-                        </div>
-                    </div>
-                    @empty
-                    <p class="text-muted">No recent favorites.</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
+    <!-- Pagination -->
+    @if($favorites->hasPages())
+    <div class="d-flex justify-content-center mt-4">
+        {{ $favorites->links() }}
     </div>
+    @endif
 </div>
 
 <script>
 function removeFromFavorites(favoriteId) {
     if (confirm('Are you sure you want to remove this book from your favorites?')) {
-        // Remove from favorites
-        console.log('Removing from favorites:', favoriteId);
+        fetch(`/favorites/${favoriteId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error removing from favorites');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error removing from favorites');
+        });
     }
 }
 
 function exportFavorites() {
-    // Export favorites data
-    console.log('Exporting favorites');
+    window.location.href = '/favorites/export';
 }
 
 function clearFavorites() {
     if (confirm('Are you sure you want to clear all your favorites? This action cannot be undone.')) {
-        // Clear all favorites
-        console.log('Clearing all favorites');
+        fetch('/favorites/clear', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error clearing favorites');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error clearing favorites');
+        });
     }
 }
 </script>

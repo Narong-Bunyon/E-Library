@@ -47,7 +47,7 @@
                     <i class="fas fa-user-check"></i>
                 </div>
                 <div class="stats-info">
-                    <div class="stats-number">{{ App\Models\User::where('status', 'active')->count() }}</div>
+                    <div class="stats-number">{{ App\Models\User::where('status', 1)->count() }}</div>
                     <div class="stats-label">Active Users</div>
                 </div>
             </div>
@@ -104,19 +104,22 @@
                     <label class="form-label">Status</label>
                     <select class="form-select" id="statusFilter" onchange="filterTable()">
                         <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="suspended">Suspended</option>
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Sort By</label>
-                    <select class="form-select" id="sortBy" onchange="sortTable()">
-                        <option value="name">Name</option>
-                        <option value="email">Email</option>
-                        <option value="role">Role</option>
-                        <option value="created_at">Join Date</option>
-                    </select>
+                    <label class="form-label">Actions</label>
+                    <div class="btn-group">
+                        <button class="btn btn-warning" onclick="clearAllFilters()" title="Clear all filters and search">
+                            <i class="fas fa-eraser me-1"></i>
+                            Clear All
+                        </button>
+                        <button class="btn btn-info" onclick="refreshTable()" title="Refresh table">
+                            <i class="fas fa-sync-alt me-1"></i>
+                            Refresh
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -190,23 +193,20 @@
                                 </span>
                             </td>
                             <td>
-                                <span class="status-badge {{ $user->status ?? 'active' }}">
-                                    @switch($user->status ?? 'active')
-                                        @case('active')
+                                <span class="status-badge {{ $user->status == 1 ? 'active' : 'inactive' }}">
+                                    @switch($user->status)
+                                        @case(1)
                                             <i class="fas fa-check-circle me-1"></i>
                                             Active
                                         @break
-                                        @case('inactive')
+                                        @case(0)
                                             <i class="fas fa-pause-circle me-1"></i>
                                             Inactive
                                         @break
-                                        @case('suspended')
-                                            <i class="fas fa-ban me-1"></i>
-                                            Suspended
-                                        @break
                                         @default
-                                            <i class="fas fa-check-circle me-1"></i>
-                                            Active
+                                            <i class="fas fa-question-circle me-1"></i>
+                                            Unknown
+                                        @break
                                     @endswitch
                                 </span>
                             </td>
@@ -284,216 +284,124 @@
             <form action="{{ route('admin.users.store') }}" method="POST" id="createUserForm">
                 @csrf
                 <div class="modal-body">
-                    <!-- User Information Section -->
-                    <div class="mb-4">
-                        <h6 class="text-primary fw-bold mb-3">
-                            <i class="fas fa-user me-2"></i>
-                            User Information
-                        </h6>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="fas fa-signature me-1 text-muted"></i>
-                                        Full Name *
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-user"></i>
-                                        </span>
-                                        <input type="text" class="form-control" name="name" required 
-                                               placeholder="Enter full name"
-                                               pattern="[A-Za-z\s]{3,50}"
-                                               title="Name should be 3-50 characters, letters only">
-                                    </div>
-                                    <div class="form-text">Enter the user's full name (3-50 characters)</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="fas fa-envelope me-1 text-muted"></i>
-                                        Email Address *
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-envelope"></i>
-                                        </span>
-                                        <input type="email" class="form-control" name="email" required 
-                                               placeholder="user@example.com">
-                                    </div>
-                                    <div class="form-text">This will be used for login</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Security Section -->
-                    <div class="mb-4">
-                        <h6 class="text-primary fw-bold mb-3">
-                            <i class="fas fa-shield-alt me-2"></i>
-                            Security Settings
-                        </h6>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="fas fa-lock me-1 text-muted"></i>
-                                        Password *
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-lock"></i>
-                                        </span>
-                                        <input type="password" class="form-control" name="password" required 
-                                               id="password"
-                                               placeholder="Enter strong password"
-                                               minlength="8"
-                                               pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-                                               title="Password must contain at least 8 characters, one uppercase, one lowercase, and one number">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
-                                            <i class="fas fa-eye" id="password-toggle"></i>
-                                        </button>
-                                    </div>
-                                    <div class="form-text">Min 8 characters with uppercase, lowercase, and numbers</div>
-                                    <div class="progress mt-2" style="height: 4px;">
-                                        <div class="progress-bar" id="password-strength" role="progressbar" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="fas fa-lock me-1 text-muted"></i>
-                                        Confirm Password *
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-lock"></i>
-                                        </span>
-                                        <input type="password" class="form-control" name="password_confirmation" required 
-                                               id="password_confirmation"
-                                               placeholder="Confirm password"
-                                               oninput="checkPasswordMatch()">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password_confirmation')">
-                                            <i class="fas fa-eye" id="password_confirmation-toggle"></i>
-                                        </button>
-                                    </div>
-                                    <div class="form-text" id="password-match-feedback"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Role & Contact Section -->
-                    <div class="mb-4">
-                        <h6 class="text-primary fw-bold mb-3">
-                            <i class="fas fa-user-cog me-2"></i>
-                            Role & Contact
-                        </h6>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="fas fa-user-tag me-1 text-muted"></i>
-                                        User Role *
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-user-tag"></i>
-                                        </span>
-                                        <select class="form-select" name="role" required id="roleSelect">
-                                            <option value="">Select Role</option>
-                                            <option value="admin">
-                                                Administrator
-                                            </option>
-                                            <option value="author">
-                                                Author
-                                            </option>
-                                            <option value="user">
-                                                User
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="form-text" id="role-description">Select the appropriate role for this user</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="fas fa-phone me-1 text-muted"></i>
-                                        Phone Number
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-phone"></i>
-                                        </span>
-                                        <input type="tel" class="form-control" name="phone" 
-                                               placeholder="+1 (555) 123-4567"
-                                               pattern="[+]?[0-9\s\-\(\)]+"
-                                               title="Enter a valid phone number">
-                                    </div>
-                                    <div class="form-text">Optional: Enter contact number</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Additional Information -->
-                    <div class="mb-3">
-                        <h6 class="text-primary fw-bold mb-3">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Additional Information
-                        </h6>
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-map-marker-alt me-1 text-muted"></i>
-                                Address
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                </span>
-                                <textarea class="form-control" name="address" rows="2" 
-                                          placeholder="Enter address (optional)"
-                                          maxlength="200"></textarea>
-                            </div>
-                            <div class="form-text">Optional: User's address (max 200 characters)</div>
-                        </div>
-                    </div>
-
-                    <!-- Account Status -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">
-                                    <i class="fas fa-toggle-on me-1 text-muted"></i>
-                                    Account Status
-                                </label>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="status" id="statusSwitch" checked>
-                                    <label class="form-check-label" for="statusSwitch">
-                                        <span id="statusText">Active</span>
-                                    </label>
+                                <label class="form-label">Name *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control" name="name" required 
+                                           placeholder="Enter full name"
+                                           pattern="[A-Za-z\s]{3,50}"
+                                           title="Name should be 3-50 characters, letters only">
                                 </div>
-                                <div class="form-text">New accounts are active by default</div>
+                                <div class="form-text">Enter the user's full name (3-50 characters)</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">
-                                    <i class="fas fa-envelope me-1 text-muted"></i>
-                                    Email Verification
-                                </label>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="email_verified" id="emailVerifiedSwitch">
-                                    <label class="form-check-label" for="emailVerifiedSwitch">
-                                        Mark as Verified
-                                    </label>
+                                <label class="form-label">Email *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                    <input type="email" class="form-control" name="email" required 
+                                           placeholder="user@example.com">
                                 </div>
-                                <div class="form-text">Skip email verification for this user</div>
+                                <div class="form-text">This will be used for login</div>
                             </div>
                         </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Password *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input type="password" class="form-control" name="password" required 
+                                           id="password"
+                                           placeholder="Enter strong password"
+                                           minlength="8"
+                                           pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+                                           title="Password must contain at least 8 characters, one uppercase, one lowercase, and one number">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
+                                        <i class="fas fa-eye" id="password-toggle"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Min 8 characters with uppercase, lowercase, and numbers</div>
+                                <div class="progress mt-2" style="height: 4px;">
+                                    <div class="progress-bar" id="password-strength" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Confirm Password *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input type="password" class="form-control" name="password_confirmation" required 
+                                           id="password_confirmation"
+                                           placeholder="Confirm password"
+                                           oninput="checkPasswordMatch()">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password_confirmation')">
+                                        <i class="fas fa-eye" id="password_confirmation-toggle"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text" id="password-match-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Role *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user-tag"></i>
+                                    </span>
+                                    <select class="form-select" name="role" required id="roleSelect">
+                                        <option value="">Select Role</option>
+                                        <option value="admin">Administrator</option>
+                                        <option value="author">Author</option>
+                                        <option value="user">User</option>
+                                    </select>
+                                </div>
+                                <div class="form-text" id="role-description">Select the appropriate role for this user</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-phone"></i>
+                                    </span>
+                                    <input type="tel" class="form-control" name="phone" 
+                                           placeholder="+1 (555) 123-4567"
+                                           pattern="[+]?[0-9\s\-\(\)]+"
+                                           title="Enter a valid phone number">
+                                </div>
+                                <div class="form-text">Optional: Enter contact number</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </span>
+                            <textarea class="form-control" name="address" rows="2" 
+                                      placeholder="Enter address (optional)"
+                                      maxlength="200"></textarea>
+                        </div>
+                        <div class="form-text">Optional: User's address (max 200 characters)</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -509,6 +417,8 @@
             </form>
         </div>
     </div>
+</div>
+                                        </div>
 </div>
 
 <!-- Edit User Modal -->
@@ -966,6 +876,23 @@ function clearSearch() {
         searchInput.value = '';
         loadUsers(window.location.href);
     }
+}
+
+function clearAllFilters() {
+    // Clear all filter inputs
+    document.getElementById('searchInput').value = '';
+    document.getElementById('roleFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('sortBy').value = 'created_at';
+    
+    // Reload page with cleared filters
+    const baseUrl = window.location.pathname;
+    window.location.href = baseUrl;
+}
+
+function refreshTable() {
+    // Reload the current page to refresh data
+    window.location.reload();
 }
 
 function viewUser(userId) {

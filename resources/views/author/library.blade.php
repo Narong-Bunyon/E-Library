@@ -148,7 +148,7 @@
                             </small>
                         </div>
                         <div class="btn-group w-100">
-                            <a href="{{ route('books.show', $book->id) }}" class="btn btn-outline-primary btn-sm">
+                            <a href="{{ route('author.books.show', $book->id) }}" class="btn btn-outline-primary btn-sm">
                                 <i class="fas fa-eye"></i> View
                             </a>
                             @if($book->file_path)

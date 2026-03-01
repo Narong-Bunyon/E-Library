@@ -135,6 +135,7 @@
                             </th>
                             <th>Author</th>
                             <th>Email</th>
+                            <th>Bio</th>
                             <th>Books</th>
                             <th>Status</th>
                             <th>Joined</th>
@@ -159,6 +160,11 @@
                                 </div>
                             </td>
                             <td>{{ $author->email }}</td>
+                            <td>
+                                <div class="bio-info">
+                                    <small class="text-muted">{{ Str::limit($author->author_bio ?? 'No bio', 50) }}</small>
+                                </div>
+                            </td>
                             <td>
                                 <div class="books-info">
                                     <div class="fw-semibold">{{ $author->books_count ?? 0 }}</div>
@@ -190,7 +196,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center py-5">
+                            <td colspan="8" class="text-center py-5">
                                 <i class="fas fa-user-pen fa-3x text-muted mb-3"></i>
                                 <p class="text-muted mb-0">No authors found</p>
                                 <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#createAuthorModal">
@@ -306,7 +312,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ route('admin.authors.update') }}" method="POST">
+            <form action="{{ route('admin.authors.update', ':id') }}" method="POST">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="id" id="editAuthorId">
@@ -393,6 +399,38 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteAuthorModal" tabindex="-1" aria-labelledby="deleteAuthorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteAuthorModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Confirm Delete Author
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-trash-alt text-danger fa-3x"></i>
+                    </div>
+                    <h6 class="mb-3" id="deleteAuthorMessage">Are you sure? You want to delete this author?</h6>
+                    <p class="text-muted mb-0" id="deleteAuthorDescription">This action cannot be undone and will also delete all their books.</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteAuthorBtn">
+                    <i class="fas fa-trash me-2"></i>Delete Author
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('styles')
@@ -403,90 +441,12 @@
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    transition: all 0.3s ease !important;
-    height: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    padding: 20px !important;
-    position: relative !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-.stats-card:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: none !important;
-    border: none !important;
-}
-
-.stats-icon {
-    width: 50px !important;
-    height: 50px !important;
-    border-radius: 10px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 20px !important;
-    color: white !important;
-    margin-right: 15px !important;
-    flex-shrink: 0 !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-.stats-card:nth-child(1) .stats-icon {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    border: none !important;
-}
-
-.stats-card:nth-child(2) .stats-icon {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
-    border: none !important;
-}
-
-.stats-card:nth-child(3) .stats-icon {
-    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%) !important;
-    border: none !important;
-}
-
-.stats-card:nth-child(4) .stats-icon {
-    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
-    border: none !important;
-}
-
-.stats-info {
-    flex: 1 !important;
-    min-width: 0 !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-.stats-number {
-    font-size: 28px !important;
-    font-weight: 700 !important;
-    color: #1a202c !important;
-    line-height: 1 !important;
-    margin-bottom: 4px !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-.stats-label {
-    font-size: 13px !important;
-    color: #64748b !important;
-    font-weight: 500 !important;
-    text-transform: capitalize !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    visibility: visible !important;
-    opacity: 1 !important;
 }
 
 /* Author Avatar Styles */
 .author-avatar {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -494,83 +454,99 @@
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 18px;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    font-size: 14px;
 }
 
-/* Books Info */
-.books-info {
-    text-align: center;
+.author-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 28px;
+    margin: 0 auto;
 }
 
-/* Status Badges */
+/* Status Badge Styles */
 .status-badge {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .status-badge.active {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
+    background-color: #d1fae5;
+    color: #065f46;
 }
 
 .status-badge.inactive {
-    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-    color: white;
+    background-color: #fee2e2;
+    color: #991b1b;
 }
 
 .status-badge.suspended {
-    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+/* Bio Info Styles */
+.bio-info {
+    max-width: 200px;
+}
+
+/* Button Group Styles */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Table Hover Effects */
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+/* Modal Styles */
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .stats-card {
-        padding: 16px !important;
-    }
-    
-    .stats-icon {
-        width: 44px !important;
-        height: 44px !important;
-        font-size: 18px !important;
-        margin-right: 12px !important;
-    }
-    
-    .stats-number {
-        font-size: 24px !important;
-    }
-    
-    .stats-label {
-        font-size: 12px !important;
-    }
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
 }
 
-@media (max-width: 576px) {
-    .stats-card {
-        padding: 14px !important;
-    }
-    
-    .stats-icon {
-        width: 40px !important;
-        height: 40px !important;
-        font-size: 16px !important;
-        margin-right: 10px !important;
-    }
-    
-    .stats-number {
-        font-size: 20px !important;
-    }
-    
-    .stats-label {
-        font-size: 11px !important;
-    }
+/* Notification Styles */
+.alert {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
-</style>
+
+.alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.alert-danger {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.alert-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.alert-info {
+    background-color: #e0f2fe;
+    color: #075985;
+}
 @endpush
 
 @push('scripts')
@@ -665,33 +641,165 @@ document.getElementById('selectAll').addEventListener('change', function() {
 // View author
 function viewAuthor(id) {
     // Load author details via AJAX
-    console.log('View author:', id);
+    fetch(`/admin/authors/${id}/details`)
+        .then(response => response.json())
+        .then(data => {
+            const detailsHtml = `
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <div class="author-avatar-large mb-3">
+                            ${data.name ? data.name.charAt(0).toUpperCase() : 'A'}
+                        </div>
+                        <h5 class="mb-1">${data.name || 'N/A'}</h5>
+                        <span class="badge bg-${data.status === 'active' ? 'success' : 'secondary'}">
+                            ${data.status || 'Unknown'}
+                        </span>
+                    </div>
+                    <div class="col-md-8">
+                        <h6 class="mb-3">Author Information</h6>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <p class="mb-2">
+                                    <strong>Email:</strong><br>
+                                    <span class="text-muted">${data.email || 'N/A'}</span>
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Phone:</strong><br>
+                                    <span class="text-muted">${data.phone || 'Not provided'}</span>
+                                </p>
+                            </div>
+                            <div class="col-sm-6">
+                                <p class="mb-2">
+                                    <strong>Books Published:</strong><br>
+                                    <span class="text-muted">${data.books_count || 0} books</span>
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Member Since:</strong><br>
+                                    <span class="text-muted">${data.created_at ? new Date(data.created_at).toLocaleDateString() : 'N/A'}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h6>Biography</h6>
+                            <p class="text-muted">${data.author_bio || 'No biography available.'}</p>
+                        </div>
+                        <div class="mt-2">
+                            <span class="badge bg-${data.approved_by_admin ? 'success' : 'warning'}">
+                                ${data.approved_by_admin ? 'Approved' : 'Pending Approval'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('authorDetails').innerHTML = detailsHtml;
+            new bootstrap.Modal(document.getElementById('viewAuthorModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading author details:', error);
+            showNotification('Error loading author details', 'error');
+        });
 }
 
 // Edit author
 function editAuthor(id) {
     // Load author data for editing
-    console.log('Edit author:', id);
+    fetch(`/admin/authors/${id}/edit`)
+        .then(response => response.json())
+        .then(data => {
+            // Populate edit form
+            document.getElementById('editAuthorId').value = data.id;
+            document.getElementById('editName').value = data.name || '';
+            document.getElementById('editEmail').value = data.email || '';
+            document.getElementById('editPhone').value = data.phone || '';
+            document.getElementById('editBio').value = data.author_bio || '';
+            document.getElementById('editStatus').value = data.status || 'active';
+            
+            // Show edit modal
+            new bootstrap.Modal(document.getElementById('editAuthorModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading author data:', error);
+            showNotification('Error loading author data', 'error');
+        });
 }
 
 // View books
 function viewBooks(id) {
-    // Redirect to author's books
-    console.log('View books for author:', id);
+    // Redirect to author's books or load via AJAX
+    window.location.href = `/admin/books?author=${id}`;
 }
 
 // Delete author
 function deleteAuthor(id) {
-    if (confirm('Are you sure you want to delete this author?')) {
-        // Delete author via AJAX
-        console.log('Delete author:', id);
-    }
+    // Fetch author information first
+    fetch(`/admin/authors/${id}`)
+        .then(response => response.json())
+        .then(author => {
+            // Show delete confirmation modal with author name
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteAuthorModal'));
+            document.getElementById('deleteAuthorMessage').textContent = 
+                `Are you sure? You want to delete ${author.name}?`;
+            document.getElementById('deleteAuthorDescription').textContent = 
+                `This action cannot be undone and will also delete all their books.`;
+            
+            // Set up confirm button
+            document.getElementById('confirmDeleteAuthorBtn').onclick = function() {
+                deleteModal.hide();
+                performDeleteAuthor(id);
+            };
+            
+            deleteModal.show();
+        })
+        .catch(error => {
+            showNotification('Error fetching author information', 'error');
+        });
+}
+
+function performDeleteAuthor(id) {
+    fetch(`/admin/authors/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Author deleted successfully', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification('Error deleting author', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error deleting author', 'error');
+    });
 }
 
 // Export authors
 function exportAuthors() {
     // Export authors data
-    console.log('Export authors');
+    window.location.href = '/admin/authors/export';
+}
+
+// Helper function for notifications
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
 }
 </script>
 @endpush

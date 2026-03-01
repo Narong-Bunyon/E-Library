@@ -1,6 +1,5 @@
 @extends('layouts.author')
 
-@use App\Models\Favorite
 
 @section('title', 'My Favorites - E-Library')
 
@@ -41,7 +40,7 @@
         <div class="col-md-3">
             <div class="card bg-success text-white">
                 <div class="card-body">
-                    <h5>{{ \App\Models\Favorite::whereHas('book', function($query) { $query->where('author_id', auth()->user()->id); })->whereDate(Favorite::CREATED_AT, '>=', now()->subDays(30))->count() }}</h5>
+                    <h5>{{ \App\Models\Favorite::whereHas('book', function($query) { $query->where('author_id', auth()->user()->id); })->whereDate('create_at', '>=', now()->subDays(30)->toDateString())->count() }}</h5>
                     <p>Last 30 Days</p>
                 </div>
             </div>

@@ -13,10 +13,10 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">{{ $book->title }}</h5>
                         <div class="btn-group btn-group-sm">
-                            <a href="{{ route('books.edit', $book->id) }}" class="btn btn-outline-primary">
+                            <a href="{{ route('author.books.edit', $book->id) }}" class="btn btn-outline-primary">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <form action="{{ route('books.destroy', $book->id) }}" method="POST" style="display: inline;">
+                            <form action="{{ route('author.books.destroy', $book->id) }}" method="POST" style="display: inline;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete this book?')">
@@ -94,11 +94,11 @@
                                         <i class="fas fa-download me-2"></i>Download Book
                                     </a>
                                 @endif
-                                <a href="{{ route('books.edit', $book->id) }}" class="btn btn-outline-primary">
+                                <a href="{{ route('author.books.edit', $book->id) }}" class="btn btn-outline-primary">
                                     <i class="fas fa-edit me-2"></i>Edit Book
                                 </a>
                                 @if($book->status === 0)
-                                    <form action="{{ route('books.publish', $book->id) }}" method="POST" style="display: inline;">
+                                    <form action="{{ route('author.books.publish', $book->id) }}" method="POST" style="display: inline;">
                                         @csrf
                                         <button type="submit" class="btn btn-success">
                                             <i class="fas fa-check me-2"></i>Publish Book

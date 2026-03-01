@@ -33,7 +33,11 @@
                         </div>
                         <div class="book-grid">
                             @forelse ($featuredBooks as $book)
-                                <x-book-card :book="$book" :showRating="true" />
+                                @auth
+                                    <x-book-card :book="$book" :showRating="true" :showAction="true" />
+                                @else
+                                    <x-book-card :book="$book" :showRating="true" :showAction="false" />
+                                @endauth
                             @empty
                                 <p class="text-muted">No featured books yet.</p>
                             @endforelse
@@ -60,14 +64,17 @@
                         </div>
                         <div class="book-grid">
                             @forelse ($recentBooks as $book)
-                                <x-book-card :book="$book" :showRating="true" :showAction="true" />
+                                @auth
+                                    <x-book-card :book="$book" :showRating="true" :showAction="true" />
+                                @else
+                                    <x-book-card :book="$book" :showRating="true" :showAction="false" />
+                                @endauth
                             @empty
                                 <p class="text-muted">No books added yet.</p>
                             @endforelse
                         </div>
                     </section>
 
-                    {{-- Recommended for You (logged-in only) --}}
                     @auth
                         @if ($recommendedBooks->count() > 0)
                         <section class="home-section">
@@ -134,8 +141,8 @@
                 <p class="cta__subtitle">Sign up and get unlimited access to thousands of books and resources.</p>
             </div>
             <div class="cta__actions">
-                <a class="btn btn--primary" href="{{ route('register') }}">Sign Up for Free</a>
-                <a class="btn btn--ghost" href="{{ route('login') }}">Log In</a>
+                <a href="{{ route('register') }}" class="btn btn--primary btn--lg">Sign Up Free</a>
+                <a href="{{ route('login') }}" class="btn btn--outline btn--lg">Sign In</a>
             </div>
         </div>
     </section>

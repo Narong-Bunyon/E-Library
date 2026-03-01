@@ -327,6 +327,38 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-trash-alt text-danger fa-3x"></i>
+                    </div>
+                    <h6 class="mb-3" id="deleteMessage">Are you sure? You want to delete this?</h6>
+                    <p class="text-muted mb-0" id="deleteDescription">This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Edit Tag Modal -->
 <div class="modal fade" id="editTagModal" tabindex="-1">
     <div class="modal-dialog">
@@ -614,6 +646,50 @@
 .btn-group-sm .btn {
     padding: 0.25rem 0.5rem;
 }
+
+/* Notification animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Modal enhancements */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #f0f0f0;
+    padding: 1.5rem;
+}
 </style>
 @endpush
 
@@ -670,31 +746,71 @@ function deleteSelectedTags() {
     const ids = Array.from(checkboxes).map(cb => cb.value);
     
     if (ids.length === 0) {
-        alert('Please select at least one tag to delete');
+        showNotification('Please select at least one tag to delete', 'warning');
         return;
     }
     
-    if (confirm(`Are you sure you want to delete ${ids.length} tag${ids.length > 1 ? 's' : ''}? This action cannot be undone.`)) {
-        fetch('/admin/tags/bulk-delete', {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ ids: ids })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting tags: ' + data.error);
-            }
-        })
-        .catch(error => {
-            alert('Error deleting tags: ' + error.message);
-        });
-    }
+    // Fetch tag names for better confirmation message
+    fetch('/admin/tags/bulk-info', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: ids })
+    })
+    .then(response => response.json())
+    .then(tags => {
+        // Show delete confirmation modal with tag names
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        const tagNames = tags.map(tag => tag.name).join(', ');
+        
+        if (tags.length === 1) {
+            document.getElementById('deleteMessage').textContent = 
+                `Are you sure? You want to delete ${tagNames}?`;
+            document.getElementById('deleteDescription').textContent = 
+                `This action cannot be undone. The tag ${tagNames} will be permanently deleted.`;
+        } else {
+            document.getElementById('deleteMessage').textContent = 
+                `Are you sure? You want to delete these ${tags.length} tags?`;
+            document.getElementById('deleteDescription').textContent = 
+                `This action cannot be undone. The following tags will be permanently deleted: ${tagNames}`;
+        }
+        
+        // Set up confirm button
+        document.getElementById('confirmDeleteBtn').onclick = function() {
+            deleteModal.hide();
+            performBulkDelete(ids);
+        };
+        
+        deleteModal.show();
+    })
+    .catch(error => {
+        showNotification('Error fetching tag information', 'error');
+    });
+}
+
+function performBulkDelete(ids) {
+    fetch('/admin/tags/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: ids })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`${ids.length} tag${ids.length > 1 ? 's' : ''} deleted successfully`, 'success');
+            location.reload();
+        } else {
+            showNotification('Error deleting tags: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error deleting tags: ' + error.message, 'error');
+    });
 }
 
 // CRUD operations
@@ -763,7 +879,6 @@ function viewTag(id) {
             const details = `
                 <div class="row">
                     <div class="col-md-6">
-                        <strong>ID:</strong> ${data.id}<br>
                         <strong>Name:</strong> ${data.name}<br>
                         <strong>Description:</strong> ${data.description || 'No description'}<br>
                         <strong>Color:</strong> <span class="badge" style="background-color: ${data.color || '#6c757d'}; color: white;">${data.color || 'Default'}</span>
@@ -776,6 +891,9 @@ function viewTag(id) {
             `;
             document.getElementById('tagDetails').innerHTML = details;
             new bootstrap.Modal(document.getElementById('viewTagModal')).show();
+        })
+        .catch(error => {
+            showNotification('Error fetching tag details', 'error');
         });
 }
 
@@ -788,30 +906,126 @@ function editTagFromView() {
 }
 
 function deleteTag(id) {
-    if (confirm('Are you sure you want to delete this tag? This action cannot be undone.')) {
-        fetch(`/admin/tags/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            }
-        })
+    // Fetch tag information first
+    fetch(`/admin/tags/${id}`)
         .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting tag: ' + data.error);
-            }
+        .then(tag => {
+            // Show delete confirmation modal with tag name
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            document.getElementById('deleteMessage').textContent = 
+                `Are you sure? You want to delete ${tag.name}?`;
+            document.getElementById('deleteDescription').textContent = 
+                `This action cannot be undone. The tag ${tag.name} will be permanently deleted.`;
+            
+            // Set up confirm button
+            document.getElementById('confirmDeleteBtn').onclick = function() {
+                deleteModal.hide();
+                performSingleDelete(id);
+            };
+            
+            deleteModal.show();
         })
         .catch(error => {
-            alert('Error deleting tag: ' + error.message);
+            showNotification('Error fetching tag information', 'error');
         });
-    }
+}
+
+function performSingleDelete(id) {
+    fetch(`/admin/tags/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Tag deleted successfully', 'success');
+            location.reload();
+        } else {
+            showNotification('Error deleting tag: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error deleting tag: ' + error.message, 'error');
+    });
 }
 
 function exportTags() {
     window.location.href = '/admin/tags/export';
+}
+
+// Notification system
+function showNotification(message, type = 'info') {
+    // Create notification container if it doesn't exist
+    let notificationContainer = document.getElementById('notificationContainer');
+    if (!notificationContainer) {
+        notificationContainer = document.createElement('div');
+        notificationContainer.id = 'notificationContainer';
+        notificationContainer.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 350px;
+        `;
+        document.body.appendChild(notificationContainer);
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    const notificationId = 'notification-' + Date.now();
+    notification.id = notificationId;
+    
+    // Set notification styles based on type
+    const bgColors = {
+        success: 'bg-success',
+        error: 'bg-danger',
+        warning: 'bg-warning',
+        info: 'bg-info'
+    };
+    
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+    
+    notification.className = `alert ${bgColors[type]} alert-dismissible fade show mb-2`;
+    notification.style.cssText = `
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+        border-radius: 8px;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas ${icons[type]} me-2"></i>
+            <div class="flex-grow-1">${message}</div>
+            <button type="button" class="btn-close ms-2" onclick="closeNotification('${notificationId}')"></button>
+        </div>
+    `;
+    
+    // Add to container
+    notificationContainer.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        closeNotification(notificationId);
+    }, 5000);
+}
+
+function closeNotification(notificationId) {
+    const notification = document.getElementById(notificationId);
+    if (notification) {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }
 }
 </script>
 @endpush

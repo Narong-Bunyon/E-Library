@@ -112,7 +112,7 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-2"></i>Create Book
                             </button>
-                            <a href="{{ route('author.books') }}" class="btn btn-secondary">
+                            <a href="{{ route('author.books.index') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Cancel
                             </a>
                         </div>
@@ -158,7 +158,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ route('author.books') }}" class="btn btn-outline-primary">
+                        <a href="{{ route('author.books.index') }}" class="btn btn-outline-primary">
                             <i class="fas fa-list me-2"></i>View All Books
                         </a>
                         <a href="{{ route('author.dashboard') }}" class="btn btn-outline-secondary">

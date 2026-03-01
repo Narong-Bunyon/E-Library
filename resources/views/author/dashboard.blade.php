@@ -96,12 +96,12 @@
                 </div>
                 <div class="card-body">
                     <div class="action-grid">
-                        <a href="{{ route('author.books.create') }}" class="action-btn primary">
+                        <!-- <a href="{{ route('author.books.create') }}" class="action-btn primary">
                             <i class="fas fa-plus"></i>
                             <span>New Book</span>
-                        </a>
+                        </a> -->
                         
-                        <a href="{{ route('author.books') }}" class="action-btn secondary">
+                        <a href="{{ route('author.books.index') }}" class="action-btn secondary">
                             <i class="fas fa-list"></i>
                             <span>My Books</span>
                         </a>
@@ -132,7 +132,7 @@
             <div class="activity-card">
                 <div class="card-header">
                     <h5><i class="fas fa-clock me-2"></i>Recent Books</h5>
-                    <a href="{{ route('author.books') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                    <a href="{{ route('author.books.index') }}" class="btn btn-sm btn-outline-primary">View All</a>
                 </div>
                 <div class="card-body">
                     @if(isset($recentBooks) && $recentBooks->count() > 0)

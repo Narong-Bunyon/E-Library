@@ -379,6 +379,38 @@ $getCategoryColor = function($categoryName) {
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteFavoriteModal" tabindex="-1" aria-labelledby="deleteFavoriteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteFavoriteModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Confirm Remove Favorite
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-heart-broken text-danger fa-3x"></i>
+                    </div>
+                    <h6 class="mb-3" id="deleteFavoriteMessage">Are you sure? You want to remove this favorite?</h6>
+                    <p class="text-muted mb-0" id="deleteFavoriteDescription">This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteFavoriteBtn">
+                    <i class="fas fa-heart-broken me-2"></i>Remove Favorite
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('styles')
 <style>
 .stat-card {
@@ -517,31 +549,47 @@ function deleteSelectedFavorites() {
     const ids = Array.from(checkboxes).map(cb => cb.value);
     
     if (ids.length === 0) {
-        alert('Please select at least one favorite to delete');
+        showNotification('Please select at least one favorite to delete', 'warning');
         return;
     }
     
-    if (confirm(`Are you sure you want to delete ${ids.length} favorite${ids.length > 1 ? 's' : ''}? This action cannot be undone.`)) {
-        fetch('/admin/favorites/bulk-delete', {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ ids: ids })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting favorites: ' + data.error);
-            }
-        })
-        .catch(error => {
-            alert('Error deleting favorites: ' + error.message);
-        });
-    }
+    // Show delete confirmation modal with favorite count
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteFavoriteModal'));
+    document.getElementById('deleteFavoriteMessage').textContent = 
+        `Are you sure? You want to remove these ${ids.length} favorite${ids.length > 1 ? 's' : ''}?`;
+    document.getElementById('deleteFavoriteDescription').textContent = 
+        `This action cannot be undone. ${ids.length} favorite${ids.length > 1 ? 's' : ''} will be permanently removed.`;
+    
+    // Set up confirm button
+    document.getElementById('confirmDeleteFavoriteBtn').onclick = function() {
+        deleteModal.hide();
+        performBulkDeleteFavorites(ids);
+    };
+    
+    deleteModal.show();
+}
+
+function performBulkDeleteFavorites(ids) {
+    fetch('/admin/favorites/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: ids })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`${ids.length} favorite${ids.length > 1 ? 's' : ''} removed successfully`, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification('Error removing favorites', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error removing favorites', 'error');
+    });
 }
 
 // CRUD operations
@@ -579,26 +627,50 @@ function viewFavorite(id) {
 }
 
 function deleteFavorite(id) {
-    if (confirm('Are you sure you want to remove this favorite? This action cannot be undone.')) {
-        fetch(`/admin/favorites/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            }
-        })
+    // Fetch favorite information first
+    fetch(`/admin/favorites/${id}`)
         .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error removing favorite: ' + data.error);
-            }
+        .then(favorite => {
+            // Show delete confirmation modal with favorite details
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteFavoriteModal'));
+            document.getElementById('deleteFavoriteMessage').textContent = 
+                `Are you sure? You want to remove this favorite?`;
+            document.getElementById('deleteFavoriteDescription').textContent = 
+                `This action cannot be undone. The favorite for "${favorite.book_title || 'Unknown Book'}" by ${favorite.user_name || 'Unknown User'} will be permanently removed.`;
+            
+            // Set up confirm button
+            document.getElementById('confirmDeleteFavoriteBtn').onclick = function() {
+                deleteModal.hide();
+                performDeleteFavorite(id);
+            };
+            
+            deleteModal.show();
         })
         .catch(error => {
-            alert('Error removing favorite: ' + error.message);
+            showNotification('Error fetching favorite information', 'error');
         });
-    }
+}
+
+function performDeleteFavorite(id) {
+    fetch(`/admin/favorites/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Favorite removed successfully', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification('Error removing favorite', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error removing favorite', 'error');
+    });
 }
 
 function exportFavorites() {

@@ -510,6 +510,38 @@ $getStatusBadgeClass = function($status) {
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteProgressModal" tabindex="-1" aria-labelledby="deleteProgressModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteProgressModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Confirm Delete Progress
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-trash-alt text-danger fa-3x"></i>
+                    </div>
+                    <h6 class="mb-3" id="deleteProgressMessage">Are you sure? You want to delete this progress entry?</h6>
+                    <p class="text-muted mb-0" id="deleteProgressDescription">This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteProgressBtn">
+                    <i class="fas fa-trash me-2"></i>Delete Progress
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('styles')
 <style>
 .stat-card {
@@ -652,31 +684,47 @@ function deleteSelectedProgress() {
     const ids = Array.from(checkboxes).map(cb => cb.value);
     
     if (ids.length === 0) {
-        alert('Please select at least one progress entry to delete');
+        showNotification('Please select at least one progress entry to delete', 'warning');
         return;
     }
     
-    if (confirm(`Are you sure you want to delete ${ids.length} progress entr${ids.length > 1 ? 'ies' : 'y'}? This action cannot be undone.`)) {
-        fetch('/admin/reading-progress/bulk-delete', {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ ids: ids })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting progress entries: ' + data.error);
-            }
-        })
-        .catch(error => {
-            alert('Error deleting progress entries: ' + error.message);
-        });
-    }
+    // Show delete confirmation modal with progress count
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteProgressModal'));
+    document.getElementById('deleteProgressMessage').textContent = 
+        `Are you sure? You want to delete these ${ids.length} progress entr${ids.length > 1 ? 'ies' : 'y'}?`;
+    document.getElementById('deleteProgressDescription').textContent = 
+        `This action cannot be undone. ${ids.length} progress entr${ids.length > 1 ? 'ies' : 'y'} will be permanently deleted.`;
+    
+    // Set up confirm button
+    document.getElementById('confirmDeleteProgressBtn').onclick = function() {
+        deleteModal.hide();
+        performBulkDeleteProgress(ids);
+    };
+    
+    deleteModal.show();
+}
+
+function performBulkDeleteProgress(ids) {
+    fetch('/admin/reading-progress/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: ids })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`${ids.length} progress entr${ids.length > 1 ? 'ies' : 'y'} deleted successfully`, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification('Error deleting progress entries', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error deleting progress entries', 'error');
+    });
 }
 
 // CRUD operations
@@ -794,26 +842,50 @@ function editProgressFromView() {
 }
 
 function deleteProgress(id) {
-    if (confirm('Are you sure you want to delete this progress entry? This action cannot be undone.')) {
-        fetch(`/admin/reading-progress/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            }
-        })
+    // Fetch progress information first
+    fetch(`/admin/reading-progress/${id}`)
         .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting progress entry: ' + data.error);
-            }
+        .then(progress => {
+            // Show delete confirmation modal with progress details
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteProgressModal'));
+            document.getElementById('deleteProgressMessage').textContent = 
+                `Are you sure? You want to delete this progress entry?`;
+            document.getElementById('deleteProgressDescription').textContent = 
+                `This action cannot be undone. The progress for ${progress.book_title || 'Unknown Book'} by ${progress.user_name || 'Unknown User'} will be permanently deleted.`;
+            
+            // Set up confirm button
+            document.getElementById('confirmDeleteProgressBtn').onclick = function() {
+                deleteModal.hide();
+                performDeleteProgress(id);
+            };
+            
+            deleteModal.show();
         })
         .catch(error => {
-            alert('Error deleting progress entry: ' + error.message);
+            showNotification('Error fetching progress information', 'error');
         });
-    }
+}
+
+function performDeleteProgress(id) {
+    fetch(`/admin/reading-progress/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Progress deleted successfully', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification('Error deleting progress', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error deleting progress', 'error');
+    });
 }
 
 function exportProgress() {

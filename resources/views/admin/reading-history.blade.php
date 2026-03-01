@@ -181,7 +181,7 @@ $getCategoryColor = function($categoryName) {
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="reading-history-table">
                         @forelse ($history as $item)
                         <tr>
                             <td>
@@ -234,8 +234,11 @@ $getCategoryColor = function($categoryName) {
                                     <button class="btn btn-outline-info btn-sm" onclick="viewProgressDetails({{ $item->id }})" title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="btn btn-outline-warning btn-sm" onclick="addToFavorites({{ $item->user_id }}, {{ $item->book_id }})" title="Add to Favorites">
+                                    <button class="btn btn-outline-warning btn-sm" onclick="showAddToFavoritesModal({{ $item->user_id }}, {{ $item->book_id }}, '{{ $item->book_title ?? 'Unknown Book' }}', '{{ $item->user_name ?? 'Unknown User' }}')" title="Add to Favorites">
                                         <i class="fas fa-heart"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="showDeleteHistoryModal({{ $item->id }}, '{{ $item->book_title ?? 'Unknown Book' }}', '{{ $item->user_name ?? 'Unknown User' }}')" title="Delete">
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             </td>
@@ -258,14 +261,19 @@ $getCategoryColor = function($categoryName) {
             
             <!-- Pagination -->
             @if($history->hasPages())
-                <div class="d-flex justify-content-between align-items-center mt-4">
-                    <div>
-                        <small class="text-muted">
-                            Showing {{ $history->firstItem() }} to {{ $history->lastItem() }} of {{ $history->total() }} entries
-                        </small>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="pagination-info">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Showing <span id="showing-from">{{ $history->firstItem() }}</span> to <span id="showing-to">{{ $history->lastItem() }}</span> of <span id="total-entries">{{ $history->total() }}</span> entries
+                            </small>
+                        </div>
                     </div>
-                    <div class="pagination-wrapper">
-                        {{ $history->links('pagination::bootstrap-4') }}
+                    <div class="col-md-6">
+                        <div class="pagination-wrapper d-flex justify-content-end" id="pagination-container">
+                            {{ $history->links('pagination::bootstrap-5') }}
+                        </div>
                     </div>
                 </div>
             @endif
@@ -303,12 +311,17 @@ $getCategoryColor = function($categoryName) {
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Progress (%)</label>
-                        <input type="number" class="form-control" name="progress_percentage" min="0" max="100" value="0" required>
+                        <label class="form-label">Current Page</label>
+                        <input type="number" class="form-control" name="current_page" min="1" value="1" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Pages Read</label>
-                        <input type="number" class="form-control" name="pages_read" min="0" value="0">
+                        <label class="form-label">Total Pages</label>
+                        <input type="number" class="form-control" name="total_pages" min="1" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Progress (%)</label>
+                        <input type="number" class="form-control" name="progress_percentage" min="0" max="100" value="0">
+                        <small class="text-muted">Leave empty to auto-calculate from pages</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Status</label>
@@ -345,6 +358,70 @@ $getCategoryColor = function($categoryName) {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add to Favorites Confirmation Modal -->
+<div class="modal fade" id="addToFavoritesModal" tabindex="-1" aria-labelledby="addToFavoritesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="addToFavoritesModalLabel">
+                    <i class="fas fa-heart text-danger me-2"></i>
+                    Add to Favorites
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-heart text-danger fa-3x"></i>
+                    </div>
+                    <h6 class="mb-3" id="addToFavoritesMessage">Are you sure? You want to add this to favorites?</h6>
+                    <p class="text-muted mb-0" id="addToFavoritesDescription">This book will be added to the user's favorites list.</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="confirmAddToFavoritesBtn">
+                    <i class="fas fa-heart me-2"></i>Add to Favorites
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteHistoryModal" tabindex="-1" aria-labelledby="deleteHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteHistoryModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Confirm Delete History
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-trash-alt text-danger fa-3x"></i>
+                    </div>
+                    <h6 class="mb-3" id="deleteHistoryMessage">Are you sure? You want to delete this reading history?</h6>
+                    <p class="text-muted mb-0" id="deleteHistoryDescription">This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteHistoryBtn">
+                    <i class="fas fa-trash me-2"></i>Delete History
+                </button>
             </div>
         </div>
     </div>
@@ -436,30 +513,82 @@ $getCategoryColor = function($categoryName) {
 
 .pagination-wrapper .pagination {
     margin-bottom: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .pagination-wrapper .page-link {
-    color: #007bff;
-    border-color: #dee2e6;
-    padding: 0.5rem 0.75rem;
+    color: #6c757d;
+    border: none;
+    background: #fff;
+    padding: 10px 16px;
+    margin: 0 2px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    min-width: 44px;
+    text-align: center;
 }
 
 .pagination-wrapper .page-link:hover {
-    color: #0056b3;
-    background-color: #e9ecef;
-    border-color: #dee2e6;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    border: none;
 }
 
 .pagination-wrapper .page-item.active .page-link {
-    background-color: #007bff;
-    border-color: #007bff;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    transform: translateY(-2px);
 }
 
 .pagination-wrapper .page-item.disabled .page-link {
-    color: #6c757d;
-    pointer-events: none;
-    background-color: #fff;
-    border-color: #dee2e6;
+    background: #f8f9fa;
+    color: #adb5bd;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    border: none;
+}
+
+.pagination-info {
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+}
+
+.pagination-info small {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Responsive pagination */
+@media (max-width: 768px) {
+    .pagination-wrapper .pagination {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .pagination-wrapper .page-link {
+        padding: 8px 12px;
+        font-size: 0.875rem;
+        min-width: 36px;
+        margin: 1px;
+    }
+    
+    .pagination-info {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .row.mt-4 > div {
+        text-align: center !important;
+    }
 }
 </style>
 @endpush
@@ -495,40 +624,71 @@ function viewProgressDetails(id) {
     fetch(`/admin/reading-history/${id}`)
         .then(response => response.json())
         .then(data => {
-            const categories = data.progress.book.categories && data.progress.book.categories.length > 0 
-                ? data.progress.book.categories.map(cat => cat.name).join(', ')
+            if (!data) {
+                showNotification('Error loading reading history details', 'error');
+                return;
+            }
+            
+            const categories = data.book && data.book.categories && data.book.categories.length > 0 
+                ? data.book.categories.map(cat => cat.name).join(', ')
                 : 'N/A';
                 
             const details = `
                 <div class="row">
                     <div class="col-md-6">
-                        <strong>User:</strong> ${data.progress.user?.name || 'N/A'} (${data.progress.user?.email || 'N/A'})<br>
-                        <strong>Book:</strong> ${data.progress.book?.title || 'N/A'}<br>
-                        <strong>Author:</strong> ${data.progress.book?.author?.name || 'N/A'}<br>
+                        <strong>User:</strong> ${data.user?.name || 'N/A'} (${data.user?.email || 'N/A'})<br>
+                        <strong>Book:</strong> ${data.book?.title || 'N/A'}<br>
+                        <strong>Author:</strong> ${data.book?.author?.name || 'N/A'}<br>
                         <strong>Categories:</strong> ${categories}<br>
-                        <strong>Progress:</strong> ${data.progress.progress_percentage || 0}%<br>
-                        <strong>Pages Read:</strong> ${data.progress.pages_read || 0} / ${data.progress.book?.pages || 0}<br>
-                        <strong>Status:</strong> ${data.progress.status || 'N/A'}<br>
-                        <strong>Started:</strong> ${data.progress.created_at || 'N/A'}<br>
-                        <strong>Last Updated:</strong> ${data.progress.updated_at || 'N/A'}
+                        <strong>Progress:</strong> ${data.progress_percentage || 0}%<br>
+                        <strong>Pages Read:</strong> ${data.current_page || 0} / ${data.book?.pages || 0}<br>
+                        <strong>Status:</strong> ${data.status || 'N/A'}<br>
+                        <strong>Started:</strong> ${data.created_at ? new Date(data.created_at).toLocaleString() : 'N/A'}<br>
+                        <strong>Last Updated:</strong> ${data.updated_at ? new Date(data.updated_at).toLocaleString() : 'N/A'}<br>
+                        <strong>Completed:</strong> ${data.completed_at ? new Date(data.completed_at).toLocaleString() : 'Not completed'}
                     </div>
                     <div class="col-md-6">
                         <strong>Book Description:</strong><br>
-                        <p>${data.progress.book?.description || 'No description available'}</p>
-                        <strong>Recent Reading Sessions:</strong><br>
-                        ${data.reading_sessions && data.reading_sessions.length > 0 ? 
-                            data.reading_sessions.map(session => `Session: ${session.create_at} - ${session.status}`).join('<br>') : 
-                            'No recent sessions found'
-                        }
+                        <p>${data.book?.description || 'No description available'}</p>
+                        <strong>Reading Notes:</strong><br>
+                        <p>${data.notes || 'No notes available'}</p>
+                        <strong>Progress Summary:</strong><br>
+                        <div class="progress mb-2">
+                            <div class="progress-bar ${data.progress_percentage >= 80 ? 'bg-success' : data.progress_percentage >= 50 ? 'bg-warning' : 'bg-danger'}" 
+                                 style="width: ${data.progress_percentage || 0}%">
+                                ${data.progress_percentage || 0}%
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
             document.getElementById('progressDetails').innerHTML = details;
             new bootstrap.Modal(document.getElementById('viewProgressModal')).show();
+        })
+        .catch(error => {
+            console.error('Error fetching reading history details:', error);
+            showNotification('Error loading reading history details', 'error');
         });
 }
 
-function addToFavorites(userId, bookId) {
+function showAddToFavoritesModal(userId, bookId, bookTitle, userName) {
+    // Show add to favorites confirmation modal with details
+    const modal = new bootstrap.Modal(document.getElementById('addToFavoritesModal'));
+    document.getElementById('addToFavoritesMessage').textContent = 
+        `Are you sure? You want to add this to favorites?`;
+    document.getElementById('addToFavoritesDescription').textContent = 
+        `"${bookTitle}" will be added to ${userName}'s favorites list.`;
+    
+    // Set up confirm button
+    document.getElementById('confirmAddToFavoritesBtn').onclick = function() {
+        modal.hide();
+        performAddToFavorites(userId, bookId);
+    };
+    
+    modal.show();
+}
+
+function performAddToFavorites(userId, bookId) {
     fetch('/admin/reading-history/add-to-favorites', {
         method: 'POST',
         headers: {
@@ -543,14 +703,69 @@ function addToFavorites(userId, bookId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Book added to favorites successfully!');
+            showNotification('Book added to favorites successfully!', 'success');
         } else {
-            alert(data.message || 'Error adding to favorites');
+            showNotification(data.message || 'Error adding to favorites', 'error');
         }
     })
     .catch(error => {
-        alert('Error adding to favorites: ' + error.message);
+        showNotification('Error adding to favorites: ' + error.message, 'error');
     });
+}
+
+function showDeleteHistoryModal(id, bookTitle, userName) {
+    // Show delete confirmation modal with details
+    const modal = new bootstrap.Modal(document.getElementById('deleteHistoryModal'));
+    document.getElementById('deleteHistoryMessage').textContent = 
+        `Are you sure? You want to delete this reading history?`;
+    document.getElementById('deleteHistoryDescription').textContent = 
+        `This action cannot be undone. The reading history for "${bookTitle}" by ${userName} will be permanently deleted.`;
+    
+    // Set up confirm button
+    document.getElementById('confirmDeleteHistoryBtn').onclick = function() {
+        modal.hide();
+        performDeleteHistory(id);
+    };
+    
+    modal.show();
+}
+
+function performDeleteHistory(id) {
+    fetch(`/admin/reading-history/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Reading history deleted successfully', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification('Error deleting reading history', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error deleting reading history', 'error');
+    });
+}
+
+// Helper function for notifications
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
 }
 
 function exportReadingHistory() {
@@ -558,26 +773,8 @@ function exportReadingHistory() {
 }
 
 function filterReadingHistory() {
-    const userId = document.getElementById('userFilter').value;
-    const bookId = document.getElementById('bookFilter').value;
-    const status = document.getElementById('statusFilter').value;
-    const dateRange = document.getElementById('dateFilter').value;
-    
-    const url = new URL(window.location);
-    
-    if (userId) url.searchParams.set('user_id', userId);
-    else url.searchParams.delete('user_id');
-    
-    if (bookId) url.searchParams.set('book_id', bookId);
-    else url.searchParams.delete('book_id');
-    
-    if (status) url.searchParams.set('status', status);
-    else url.searchParams.delete('status');
-    
-    if (dateRange) url.searchParams.set('date_range', dateRange);
-    else url.searchParams.delete('date_range');
-    
-    window.location.href = url.toString();
+    // Use AJAX to filter without page reload
+    loadReadingHistoryPage(1);
 }
 
 // Handle form submission
@@ -590,22 +787,119 @@ document.getElementById('addProgressForm').addEventListener('submit', function(e
         method: 'POST',
         body: formData,
         headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            showNotification('Reading progress added successfully!', 'success');
             const modal = bootstrap.Modal.getInstance(document.getElementById('addProgressModal'));
             modal.hide();
-            location.reload();
+            this.reset();
+            setTimeout(() => location.reload(), 1000);
+        } else if (data.errors) {
+            // Handle validation errors
+            const errorMessages = Object.values(data.errors).flat().join(', ');
+            showNotification('Error: ' + errorMessages, 'error');
         } else {
-            alert(data.message || 'Error adding reading progress');
+            showNotification(data.message || 'Error adding reading progress', 'error');
         }
     })
     .catch(error => {
-        alert('Error adding reading progress: ' + error.message);
+        console.error('Error:', error);
+        showNotification('Error adding reading progress: ' + error.message, 'error');
     });
+});
+
+// Auto-calculate progress percentage
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPageInput = document.querySelector('input[name="current_page"]');
+    const totalPagesInput = document.querySelector('input[name="total_pages"]');
+    const progressInput = document.querySelector('input[name="progress_percentage"]');
+    
+    function calculateProgress() {
+        const currentPage = parseInt(currentPageInput.value) || 0;
+        const totalPages = parseInt(totalPagesInput.value) || 0;
+        
+        if (currentPage > 0 && totalPages > 0) {
+            const percentage = Math.round((currentPage / totalPages) * 100);
+            progressInput.value = Math.min(percentage, 100);
+        }
+    }
+    
+    if (currentPageInput && totalPagesInput && progressInput) {
+        currentPageInput.addEventListener('input', calculateProgress);
+        totalPagesInput.addEventListener('input', calculateProgress);
+    }
+});
+
+// AJAX Pagination
+function loadReadingHistoryPage(page) {
+    const userId = document.getElementById('userFilter').value;
+    const bookId = document.getElementById('bookFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const dateRange = document.getElementById('dateFilter').value;
+    
+    const params = new URLSearchParams();
+    if (page) params.append('page', page);
+    if (userId) params.append('user_id', userId);
+    if (bookId) params.append('book_id', bookId);
+    if (status) params.append('status', status);
+    if (dateRange) params.append('date_range', dateRange);
+    
+    fetch(`/admin/reading-history?${params.toString()}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update table body
+            document.getElementById('reading-history-table').innerHTML = data.html;
+            
+            // Update pagination
+            document.getElementById('pagination-container').innerHTML = data.pagination;
+            
+            // Update info
+            document.getElementById('showing-from').textContent = data.from;
+            document.getElementById('showing-to').textContent = data.to;
+            document.getElementById('total-entries').textContent = data.total;
+            
+            // Re-attach pagination click handlers
+            attachPaginationHandlers();
+        } else {
+            showNotification('Error loading page', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error loading page: ' + error.message, 'error');
+    });
+}
+
+// Attach click handlers to pagination links
+function attachPaginationHandlers() {
+    const paginationLinks = document.querySelectorAll('.pagination-wrapper .page-link');
+    paginationLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const href = this.getAttribute('href');
+            if (href && !this.classList.contains('disabled')) {
+                const url = new URL(href, window.location.origin);
+                const page = url.searchParams.get('page');
+                loadReadingHistoryPage(page);
+            }
+        });
+    });
+}
+
+// Initialize pagination handlers on page load
+document.addEventListener('DOMContentLoaded', function() {
+    attachPaginationHandlers();
 });
 </script>
 @endpush

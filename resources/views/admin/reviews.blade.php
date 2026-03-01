@@ -237,7 +237,7 @@
                         </tr>
                         @endforelse
                     </tbody>
-                        </table>
+                </table>
             </div>
             
             <!-- Pagination -->
@@ -730,26 +730,52 @@ function deleteSelectedReviews() {
     }
 }
 
+function deleteReview(id) {
+    if (confirm('Are you sure you want to delete this review?')) {
+        fetch(`/admin/reviews/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting review: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error deleting review: ' + error.message);
+        });
+    }
+}
+
 // CRUD operations
 function editReview(id) {
     fetch(`/admin/reviews/${id}/edit`)
         .then(response => response.json())
         .then(data => {
-            document.getElementById('editReviewId').value = data.id;
-            document.getElementById('editBookId').value = data.book_id;
-            document.getElementById('editUserId').value = data.user_id;
-            document.getElementById('editComment').value = data.comment;
-            document.getElementById('editStatus').value = data.status || 'pending';
-            
-            // Set rating
-            const rating = data.rating || 5;
-            document.getElementById('editRatingValue').value = rating;
-            updateStars(document.getElementById('editRating'), rating);
-            
-            const form = document.getElementById('editReviewForm');
-            form.action = `/admin/reviews/${id}`;
-            
-            new bootstrap.Modal(document.getElementById('editReviewModal')).show();
+            if (data && data.success) {
+                // Populate edit form with review data
+                document.getElementById('editReviewId').value = data.id;
+                document.getElementById('editBookId').value = data.book_id;
+                document.getElementById('editUserId').value = data.user_id;
+                document.getElementById('editRating').value = data.rating;
+                document.getElementById('editComment').value = data.comment || '';
+                document.getElementById('editStatus').value = data.status || 'pending';
+                
+                // Show edit modal
+                const modal = new bootstrap.Modal(document.getElementById('editReviewModal'));
+                modal.show();
+            } else {
+                showNotification('Error fetching review data', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error fetching review data', 'error');
         });
 }
 
@@ -760,32 +786,29 @@ function updateReview(event) {
     const formData = new FormData(form);
     
     fetch(form.action, {
-        method: 'POST',
-        body: formData,
+        method: 'PUT',
         headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: formData
     })
-    .then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;
-            return;
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        if (data && data.success) {
+        if (data.success) {
+            showNotification('Review updated successfully', 'success');
+            
+            // Hide edit modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('editReviewModal'));
             modal.hide();
+            
+            // Reload the page to show updated data
             location.reload();
-        } else if (data && data.errors) {
-            console.error('Validation errors:', data.errors);
-            alert('Please fix the errors in the form.');
+        } else {
+            showNotification('Error updating review: ' + data.error, 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while updating the review.');
+        showNotification('Error updating review: ' + error.message, 'error');
     });
 }
 
@@ -871,9 +894,8 @@ function rejectReview(id) {
 }
 
 function deleteReview(id) {
-    if (confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
-        fetch(`/admin/reviews/${id}`, {
-            method: 'DELETE',
+    // Fetch review information first
+    fetch(`/admin/reviews/${id}`)
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Content-Type': 'application/json'
