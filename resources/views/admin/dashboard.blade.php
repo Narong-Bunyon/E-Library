@@ -2,7 +2,7 @@
 
 @section('title', 'Admin Dashboard - E-Library')
 
-@section('page-title', 'Dashboard Overview')
+@section('page-title', 'Dashboard Admin')
 
 @section('content')
 <div class="dashboard-container">

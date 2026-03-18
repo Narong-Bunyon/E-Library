@@ -295,9 +295,9 @@
                                     <i class="fas fa-book fa-3x text-muted mb-3"></i>
                                     <h5 class="text-muted">No Books Found</h5>
                                     <p class="text-muted">You haven't created any books yet. Start by creating your first book!</p>
-                                    <a href="{{ route('author.books.create') }}" class="btn btn-primary">
+                                    <!-- <a href="{{ route('author.books.create') }}" class="btn btn-primary">
                                         <i class="fas fa-plus me-2"></i>Create Your First Book
-                                    </a>
+                                    </a> -->
                                 </div>
                             </td>
                         </tr>
@@ -436,12 +436,12 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            @include('author.books.partials.create-form')
+            @include('author.books.partials.create-book-form')
         </div>
     </div>
 </div>
 
-@include('author.books.partials.form-scripts')
+@include('author.books.partials.create-book-script')
 
 <script>
 // Additional functions for index-specific functionality

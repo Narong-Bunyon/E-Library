@@ -5,6 +5,23 @@
 
 @section('page-title', 'My Favorites')
 
+@php
+// Helper functions for display
+$getCategoryColor = function($categoryName) {
+    $colors = [
+        'Programming' => '#007bff',
+        'Design' => '#28a745',
+        'Database' => '#ffc107',
+        'Web Development' => '#17a2b8',
+        'Mobile' => '#6f42c1',
+        'DevOps' => '#fd7e14',
+        'Security' => '#dc3545',
+        'AI/ML' => '#20c997',
+    ];
+    return $colors[$categoryName] ?? '#6c757d';
+};
+@endphp
+
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -123,6 +140,17 @@
                             <td>{{ number_format($favorite->book->views ?? 0) }}</td>
                             <td>{{ number_format($favorite->book->downloads ?? 0) }}</td>
                             <td>
+                                @if($favorite->book->categories && $favorite->book->categories->count() > 0)
+                                    @foreach($favorite->book->categories as $category)
+                                        <span class="badge me-1" style="background-color: {{ getCategoryColor($category->name ?? 'Default') }};">
+                                            {{ $category->name }}
+                                        </span>
+                                    @endforeach
+                                @else
+                                    <span class="badge bg-secondary">N/A</span>
+                                @endif
+                            </td>
+                            <td>
                                 <div class="btn-group btn-group-sm">
                                     <button class="btn btn-outline-primary" onclick="viewReader({{ $favorite->user_id }})">
                                         <i class="fas fa-user"></i>
@@ -138,7 +166,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center py-4">
+                            <td colspan="7" class="text-center py-4">
                                 <p class="text-muted">No favorites found.</p>
                             </td>
                         </tr>
@@ -206,18 +234,68 @@
 <script>
 function viewReader(userId) {
     // View reader profile
+    window.location.href = `/admin/users/${userId}`;
 }
 
 function viewBook(bookId) {
     // View book details
+    window.location.href = `/admin/books/${bookId}`;
 }
 
 function sendMessage(userId, bookId) {
-    // Send message to reader
+    const message = prompt('Enter your message to the reader:');
+    if (message && message.trim()) {
+        // Here you would implement actual messaging functionality
+        alert(`Message sent to user ${userId}: ${message}`);
+    }
 }
 
 function exportFavorites() {
     // Export favorites data
+    const filter = document.getElementById('statusFilter')?.value;
+    const bookFilter = document.getElementById('bookFilter')?.value;
+    
+    let url = '/author/favorites/export';
+    const params = new URLSearchParams();
+    
+    if (filter) params.append('status', filter);
+    if (bookFilter) params.append('book', bookFilter);
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    window.location.href = url;
 }
+
+// Filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const statusFilter = document.getElementById('statusFilter');
+    const bookFilter = document.getElementById('bookFilter');
+    
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
+            const url = new URL(window.location);
+            if (this.value) {
+                url.searchParams.set('status', this.value);
+            } else {
+                url.searchParams.delete('status');
+            }
+            window.location.href = url.toString();
+        });
+    }
+    
+    if (bookFilter) {
+        bookFilter.addEventListener('change', function() {
+            const url = new URL(window.location);
+            if (this.value) {
+                url.searchParams.set('book', this.value);
+            } else {
+                url.searchParams.delete('book');
+            }
+            window.location.href = url.toString();
+        });
+    }
+});
 </script>
 @endsection

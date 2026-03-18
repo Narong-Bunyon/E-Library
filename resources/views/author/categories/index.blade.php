@@ -171,7 +171,7 @@
     <!-- Pagination -->
     @if($categories->hasPages())
         <div class="d-flex justify-content-center mt-4">
-            {{ $categories->links() }}
+            {{ $categories->links('pagination::simple-numbers') }}
         </div>
     @endif
 </div>

@@ -233,6 +233,17 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/favorites/{id}', [AdminController::class, 'destroyFavorite'])->name('favorites.destroy');
     Route::delete('/favorites/bulk-delete', [AdminController::class, 'bulkDeleteFavorites'])->name('favorites.bulk-delete');
     Route::get('/favorites/export', [AdminController::class, 'exportFavorites'])->name('favorites.export');
+    
+    Route::get('/reading-history', [AdminController::class, 'readingHistory'])->name('reading-history');
+    Route::post('/reading-history', [AdminController::class, 'storeReadingHistory'])->name('reading-history.store');
+    Route::get('/reading-history/add-progress', [AdminController::class, 'readingProgress'])->name('reading-history.add-progress');
+    Route::post('/reading-history/add-progress', [AdminController::class, 'storeReadingProgress'])->name('reading-history.store-progress');
+    Route::get('/reading-history/{id}', [AdminController::class, 'showReadingHistory'])->name('reading-history.show');
+    Route::get('/reading-history/{id}/edit', [AdminController::class, 'editReadingHistory'])->name('reading-history.edit');
+    Route::put('/reading-history/{id}', [AdminController::class, 'updateReadingHistory'])->name('reading-history.update');
+    Route::delete('/reading-history/{id}', [AdminController::class, 'deleteReadingHistory'])->name('reading-history.delete');
+    Route::delete('/reading-history/bulk-delete', [AdminController::class, 'bulkDeleteReadingHistory'])->name('reading-history.bulk-delete');
+    Route::get('/reading-history/export', [AdminController::class, 'exportReadingHistory'])->name('reading-history.export');
     Route::get('/downloads', [AdminController::class, 'downloads'])->name('downloads');
     Route::get('/downloads/{id}', [AdminController::class, 'showDownload'])->name('downloads.show');
     Route::post('/downloads/{id}/re-download', [AdminController::class, 'reDownload'])->name('downloads.re-download');

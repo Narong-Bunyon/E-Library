@@ -12,9 +12,6 @@
             <a href="{{ route('author.books.index') }}" class="btn btn-outline-secondary">
                 <i class="fas fa-list me-2"></i>All Books
             </a>
-            <button type="button" class="btn btn-primary" onclick="openCreateModal()">
-                <i class="fas fa-plus me-2"></i>Add New Book
-            </button>
         </div>
     </div>
     
@@ -208,7 +205,7 @@
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                @include('author.books.partials.create-form')
+                @include('author.books.partials.create-book-form')
             </div>
         </div>
     </div>
@@ -234,9 +231,7 @@
                 <i class="fas fa-book fa-3x text-muted mb-3"></i>
                 <h5 class="text-muted">No Published Books</h5>
                 <p class="text-muted">You haven't published any books yet. Start by creating a new book!</p>
-                <a href="{{ route('author.books.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Create Your First Book
-                </a>
+               
             </div>
         </div>
         @endforelse
@@ -250,5 +245,4 @@
     @endif
 </div>
 
-@include('author.books.partials.form-scripts')
 @endsection

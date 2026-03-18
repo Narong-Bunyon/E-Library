@@ -24,7 +24,7 @@ class AdminController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        
+
         // Apply admin middleware to admin-only methods
         $this->middleware('role:admin')->only([
             'dashboard', 'users', 'storeUser', 'updateUser', 'deleteUser',
@@ -40,7 +40,7 @@ class AdminController extends Controller
             'downloads', 'statistics', 'reports', 'export', 'appearance', 'saveAppearance',
             'emailTemplates', 'security', 'backup', 'logs'
         ]);
-        
+
         // Apply author middleware to author-specific methods
         $this->middleware('role:author')->only([
             'authorDashboard', 'authorProfile', 'authorSettings', 'updateAuthorProfile'
@@ -82,10 +82,20 @@ class AdminController extends Controller
             'role' => 'required|in:admin,author,user',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
+            'image_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Handle profile image upload
+        $imageProfilePath = null;
+        if ($request->hasFile('image_profile')) {
+            $image = $request->file('image_profile');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->storeAs('public/profile_images', $imageName);
+            $imageProfilePath = 'profile_images/' . $imageName;
         }
 
         $user = User::create([
@@ -95,6 +105,7 @@ class AdminController extends Controller
             'role' => $request->role,
             'phone' => $request->phone,
             'address' => $request->address,
+            'image_profile' => $imageProfilePath,
         ]);
 
         return response()->json(['success' => true, 'user' => $user], 201);
@@ -106,7 +117,7 @@ class AdminController extends Controller
     public function deleteUser($id)
     {
         $user = User::findOrFail($id);
-        
+
         if ($user->id === auth()->id()) {
             return response()->json(['error' => 'You cannot delete your own account'], 403);
         }
@@ -156,7 +167,7 @@ class AdminController extends Controller
         $users = $users->get();
 
         $filename = 'users_export_' . date('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -164,10 +175,10 @@ class AdminController extends Controller
 
         $callback = function() use ($users) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV header
             fputcsv($file, ['ID', 'Name', 'Email', 'Role', 'Phone', 'Address', 'Created At']);
-            
+
             // CSV data
             foreach ($users as $user) {
                 fputcsv($file, [
@@ -180,7 +191,7 @@ class AdminController extends Controller
                     $user->created_at
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -194,11 +205,11 @@ class AdminController extends Controller
     {
         // Apply filters from request
         $query = User::query();
-        
+
         if (request()->has('role')) {
             $query->where('role', request('role'));
         }
-        
+
         if (request()->has('search')) {
             $search = request('search');
             $query->where(function($q) use ($search) {
@@ -210,13 +221,13 @@ class AdminController extends Controller
         if (request()->has('sort')) {
             $sortColumn = request('sort');
             $sortOrder = request('order', 'asc');
-            
+
             // Validate sort column to prevent SQL injection
             $allowedColumns = ['id', 'name', 'email', 'role', 'created_at', 'updated_at'];
             if (!in_array($sortColumn, $allowedColumns)) {
                 $sortColumn = 'created_at'; // default sort
             }
-            
+
             $query->orderBy($sortColumn, $sortOrder);
         }
 
@@ -230,30 +241,18 @@ class AdminController extends Controller
     public function authors()
     {
         // Apply filters from request
-        $query = User::query()->where('role', 'author')
-            ->leftJoin('authorse', 'users.id', '=', 'authorse.user_id')
-            ->select('users.*', 'authorse.bio as author_bio', 'authorse.approved_by_admin');
-        
+        $query = User::query()->where('role', 'author');
+
         if (request()->has('search')) {
             $search = request('search');
             $query->where(function($q) use ($search) {
-                $q->where('users.name', 'like', '%' . $search . '%')
-                  ->orWhere('users.email', 'like', '%' . $search . '%')
-                  ->orWhere('authorse.bio', 'like', '%' . $search . '%');
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%');
             });
         }
 
         if (request()->has('status')) {
-            $query->where('users.status', request('status'));
-        }
-
-        if (request()->has('approved')) {
-            $approved = request('approved');
-            if ($approved === '1') {
-                $query->where('authorse.approved_by_admin', true);
-            } elseif ($approved === '0') {
-                $query->where('authorse.approved_by_admin', false);
-            }
+            $query->where('status', request('status'));
         }
 
         if (request()->has('books')) {
@@ -297,7 +296,7 @@ class AdminController extends Controller
             ->leftJoin('authorse', 'users.id', '=', 'authorse.user_id')
             ->select('users.*', 'authorse.bio as author_bio', 'authorse.approved_by_admin')
             ->findOrFail($id);
-        
+
         return response()->json($author);
     }
 
@@ -346,10 +345,10 @@ class AdminController extends Controller
     {
         $author = User::where('role', 'author')
             ->leftJoin('authorse', 'users.id', '=', 'authorse.user_id')
-            ->select('users.*', 'authorse.bio as author_bio', 'authorse.approved_by_admin')
+            ->select('users.*', 'authorse.bio as author_bio', 'authorse.approved_by_admin', 'users.image_profile')
             ->withCount('books')
             ->findOrFail($id);
-            
+
         return response()->json($author);
     }
 
@@ -360,9 +359,9 @@ class AdminController extends Controller
     {
         $author = User::where('role', 'author')
             ->leftJoin('authorse', 'users.id', '=', 'authorse.user_id')
-            ->select('users.*', 'authorse.bio as author_bio', 'authorse.approved_by_admin')
+            ->select('users.*', 'authorse.bio as author_bio', 'authorse.approved_by_admin', 'users.image_profile')
             ->findOrFail($id);
-            
+
         return response()->json($author);
     }
 
@@ -372,7 +371,7 @@ class AdminController extends Controller
     public function updateAuthor(Request $request, $id)
     {
         $author = User::findOrFail($id);
-        
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$id,
@@ -399,7 +398,7 @@ class AdminController extends Controller
         }
 
         $author->update($updateData);
-        
+
         // Update or create author record in authorse table
         DB::table('authorse')->updateOrInsert(
             ['user_id' => $id],
@@ -408,7 +407,7 @@ class AdminController extends Controller
                 'approved_by_admin' => true, // Admin updating author, so approve
             ]
         );
-        
+
         return redirect()->route('admin.authors')->with('success', 'Author updated successfully.');
     }
 
@@ -418,13 +417,13 @@ class AdminController extends Controller
     public function deleteAuthor($id)
     {
         $author = User::findOrFail($id);
-        
+
         // Delete from authorse table first (due to foreign key constraint)
         DB::table('authorse')->where('user_id', $id)->delete();
-        
+
         // Delete user record
         $author->delete();
-        
+
         return response()->json(['success' => true, 'message' => 'Author deleted successfully']);
     }
 
@@ -434,17 +433,17 @@ class AdminController extends Controller
     public function exportAuthors()
     {
         $authors = User::where('role', 'author')->withCount('books')->get();
-        
+
         $csvData = "Name,Email,Phone,Status,Books Count,Created At\n";
         foreach ($authors as $author) {
             $csvData .= "{$author->name},{$author->email},{$author->phone},{$author->status},{$author->books_count},{$author->created_at}\n";
         }
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename=authors.csv',
         ];
-        
+
         return response($csvData, 200, $headers);
     }
 
@@ -454,19 +453,55 @@ class AdminController extends Controller
     public function updateUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$id,
             'role' => 'required|in:admin,author,user',
+            'image_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+            }
             return back()->withErrors($validator)->withInput();
         }
 
-        $user->update($request->all());
+        // Handle profile image upload
+        if ($request->hasFile('image_profile')) {
+            $image = $request->file('image_profile');
+            
+            // Delete old image if exists
+            if ($user->image_profile) {
+                $oldImagePath = storage_path('app/public/' . $user->image_profile);
+                if (file_exists($oldImagePath)) {
+                    unlink($oldImagePath);
+                }
+            }
+            
+            // Upload new image
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->storeAs('public/profile_images', $imageName);
+            $user->image_profile = 'profile_images/' . $imageName;
+        }
+
+        // Update user data (excluding image which is handled separately)
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->role = $request->role;
         
+        // Update password if provided
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+        
+        $user->save();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'User updated successfully.']);
+        }
+
         return redirect()->route('admin.users')->with('success', 'User updated successfully.');
     }
 
@@ -477,7 +512,7 @@ class AdminController extends Controller
     // {
     //     $user = User::findOrFail($id);
     //     $user->delete();
-        
+
     //     return redirect()->route('admin.users')->with('success', 'User deleted successfully.');
     // }
 
@@ -487,9 +522,9 @@ class AdminController extends Controller
     public function updateCategory(Request $request, $id)
     {
         $category = Category::findOrFail($id);
-        
+
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:categories,name,'.$id,
+            'name' => 'required|string|max:255|unique:category,name,'.$id,
             'description' => 'nullable|string|max:1000',
             'color' => 'required|string|max:7',
             'image_cover' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -533,9 +568,9 @@ class AdminController extends Controller
                     'category' => $category
                 ]);
             }
-            
+
             return redirect()->route('admin.categories')->with('success', 'Category updated successfully.');
-        
+
         } catch (\Exception $e) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -549,7 +584,7 @@ class AdminController extends Controller
     public function editCategory($id)
     {
         $category = Category::findOrFail($id);
-        
+
         return response()->json([
             'success' => true,
             'category' => $category
@@ -571,13 +606,13 @@ class AdminController extends Controller
     public function bulkDeleteCategories(Request $request)
     {
         $ids = $request->ids;
-        
+
         if (empty($ids)) {
             return response()->json(['error' => 'No categories selected'], 400);
         }
 
         $deleted = Category::whereIn('id', $ids)->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => "Successfully deleted {$deleted} categor" . ($deleted > 1 ? 'ies' : 'y')
@@ -604,7 +639,7 @@ class AdminController extends Controller
         $categories = $categories->get();
 
         $filename = 'categories_export_' . date('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -612,10 +647,10 @@ class AdminController extends Controller
 
         $callback = function() use ($categories) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV header
             fputcsv($file, ['ID', 'Name', 'Description', 'Books Count', 'Created At']);
-            
+
             // CSV data
             foreach ($categories as $category) {
                 fputcsv($file, [
@@ -626,7 +661,7 @@ class AdminController extends Controller
                     $category->created_at ?? 'N/A'
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -635,18 +670,18 @@ class AdminController extends Controller
     public function books()
     {
         $query = Book::with(['author', 'categories']);
-        
+
         // Apply filters
         if (request()->has('status')) {
             $query->where('status', request('status'));
         }
-        
+
         if (request()->has('category_id')) {
             $query->whereHas('categories', function($q) {
                 $q->where('category_id', request('category_id'));
             });
         }
-        
+
         if (request()->has('search')) {
             $search = request('search');
             $query->where(function($q) use ($search) {
@@ -654,7 +689,7 @@ class AdminController extends Controller
                   ->orWhere('description', 'like', '%' . $search . '%');
             });
         }
-        
+
         if (request()->has('sort')) {
             $sortColumn = request('sort');
             if ($sortColumn === "downloads") {
@@ -667,8 +702,8 @@ class AdminController extends Controller
         } else {
             $query->latest();
         }
-        
-        $books = $query->paginate(10);
+
+        $books = $query->paginate(5);
         $categories = Category::all();
         $authors = \App\Models\Author::all();
         $booksThisMonth = Book::where('create_at', '>=', now()->subMonth())->count();
@@ -676,6 +711,21 @@ class AdminController extends Controller
         $draftBooks = Book::where('status', 0)->count();
         $totalDownloads = Download::where('status', 'completed')->count();
         $downloadsThisMonth = Download::where('status', 'completed')->where('created_at', '>=', now()->subMonth())->count();
+
+        // Check if this is an AJAX request
+        if (request()->ajax() || request()->expectsJson()) {
+            // Return only the table content for AJAX requests
+            $tableHtml = view('admin.books._table', compact('books'))->render();
+            $paginationHtml = view('admin.books._pagination', compact('books'))->render();
+            
+            return response()->json([
+                'success' => true,
+                'table' => $tableHtml,
+                'pagination' => $paginationHtml
+            ]);
+        }
+
+        // Return full view for regular requests
         return view('admin.books', compact('books', 'categories', 'authors', 'booksThisMonth', 'publishedBooks', 'draftBooks', 'totalDownloads', 'downloadsThisMonth'));
     }
 
@@ -684,7 +734,7 @@ class AdminController extends Controller
      */
     public function editBook($id)
     {
-        $book = Book::with(['author', 'categories'])->findOrFail($id);
+        $book = Book::with(['author', 'categories', 'tags'])->findOrFail($id);
         return response()->json($book);
     }
 
@@ -693,7 +743,7 @@ class AdminController extends Controller
      */
     public function viewBook($id)
     {
-        $book = Book::with(['author', 'categories'])->findOrFail($id);
+        $book = Book::with(['author', 'categories', 'tags'])->findOrFail($id);
         return response()->json($book);
     }
 
@@ -703,13 +753,13 @@ class AdminController extends Controller
     public function bulkDeleteBooks(Request $request)
     {
         $ids = $request->ids;
-        
+
         if (empty($ids)) {
             return response()->json(['error' => 'No books selected'], 400);
         }
 
         $deleted = Book::whereIn('id', $ids)->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => "Successfully deleted {$deleted} book" . ($deleted > 1 ? 's' : '')
@@ -745,7 +795,7 @@ class AdminController extends Controller
         $books = $books->get();
 
         $filename = 'books_export_' . date('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -753,10 +803,10 @@ class AdminController extends Controller
 
         $callback = function() use ($books) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV header
             fputcsv($file, ['ID', 'Title', 'Author', 'Category', 'Status', 'Pages', 'Language', 'ISBN', 'Published Date', 'Created At']);
-            
+
             // CSV data
             foreach ($books as $book) {
                 fputcsv($file, [
@@ -772,7 +822,7 @@ class AdminController extends Controller
                     $book->create_at ?? 'N/A'
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -801,12 +851,12 @@ class AdminController extends Controller
         }
 
         $book = Book::create($request->all());
-        
+
         // Handle category relationship
         if ($request->has('category_id')) {
             $book->categories()->attach([$request->category_id]);
         }
-        
+
         return redirect()->route('admin.books')->with('success', 'Book created successfully.');
     }
 
@@ -816,7 +866,7 @@ class AdminController extends Controller
     public function updateBook(Request $request, $id)
     {
         $book = Book::findOrFail($id);
-        
+
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -837,16 +887,16 @@ class AdminController extends Controller
         }
 
         $book->update($request->all());
-        
+
         // Handle category relationship
         if ($request->has('category_id')) {
             $book->categories()->sync([$request->category_id]);
         }
-        
+
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'book' => $book]);
         }
-        
+
         return redirect()->route('admin.books')->with('success', 'Book updated successfully.');
     }
 
@@ -857,7 +907,7 @@ class AdminController extends Controller
     {
         $book = Book::findOrFail($id);
         $book->delete();
-        
+
         return redirect()->route('admin.books')->with('success', 'Book deleted successfully.');
     }
 
@@ -866,10 +916,46 @@ class AdminController extends Controller
      */
     public function categories()
     {
-        $categories = Category::orderBy('name')->get();
+        $query = Category::orderBy('name');
+
+        // Handle search
+        if (request()->has('search')) {
+            $search = request('search');
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        // Handle sort
+        if (request()->has('sort')) {
+            $sortBy = request('sort');
+            if ($sortBy === 'books_count') {
+                $query->withCount('books')->orderBy('books_count', 'desc');
+            } elseif ($sortBy === 'created_at') {
+                $query->orderBy('created_at', 'desc');
+            } else {
+                $query->orderBy($sortBy, 'asc');
+            }
+        }
+
+        $categories = $query->paginate(12);
         $totalBooks = Book::count();
         $avgBooksPerCategory = $categories->count() > 0 ? round($totalBooks / $categories->count(), 1) : 0;
         $newCategoriesThisMonth = 0; // No created_at column in category table
+
+        // Handle AJAX request
+        if (request()->ajax() || request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'categories' => $categories->items(),
+                'pagination' => [
+                    'current_page' => $categories->currentPage(),
+                    'last_page' => $categories->lastPage(),
+                    'per_page' => $categories->perPage(),
+                    'total' => $categories->total(),
+                    'html' => $categories->links('simple-pagination')->toHtml()
+                ]
+            ]);
+        }
+
         return view('admin.categories', compact('categories', 'totalBooks', 'avgBooksPerCategory', 'newCategoriesThisMonth'));
     }
 
@@ -879,7 +965,7 @@ class AdminController extends Controller
     public function storeCategory(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:categories,name',
+            'name' => 'required|string|max:255|unique:category,name',
             'description' => 'nullable|string|max:1000',
             'color' => 'required|string|max:7',
             'image_cover' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -919,9 +1005,9 @@ class AdminController extends Controller
                     'category' => $category
                 ]);
             }
-            
+
             return redirect()->route('admin.categories')->with('success', 'Category created successfully.');
-        
+
         } catch (\Exception $e) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -945,14 +1031,14 @@ class AdminController extends Controller
             $bookCount = $category->books()->count();
             if ($bookCount > 0) {
                 $message = "Cannot delete category. It contains {$bookCount} books. Please remove books from this category first.";
-                
+
                 if (request()->expectsJson()) {
                     return response()->json([
                         'success' => false,
                         'message' => $message
                     ]);
                 }
-                
+
                 return back()->with('error', $message);
             }
 
@@ -969,19 +1055,19 @@ class AdminController extends Controller
                     'message' => 'Category deleted successfully!'
                 ]);
             }
-            
+
             return redirect()->route('admin.categories')->with('success', 'Category deleted successfully.');
-        
+
         } catch (\Exception $e) {
             $message = 'Error deleting category: ' . $e->getMessage();
-            
+
             if (request()->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => $message
                 ]);
             }
-            
+
             return back()->with('error', $message);
         }
     }
@@ -995,7 +1081,7 @@ class AdminController extends Controller
         $users = User::all();
         $totalPermissions = 24; // You can calculate this dynamically
         $recentChanges = []; // You can fetch recent permission changes
-        
+
         return view('admin.roles', compact('roles', 'users', 'totalPermissions', 'recentChanges'));
     }
 
@@ -1031,7 +1117,7 @@ class AdminController extends Controller
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'role' => $role]);
         }
-        
+
         return redirect()->route('admin.roles.index')->with('success', 'Role created successfully.');
     }
 
@@ -1050,7 +1136,7 @@ class AdminController extends Controller
     public function updateRole(Request $request, $id)
     {
         $role = Role::findOrFail($id);
-        
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:roles,name,'.$id,
             'description' => 'nullable|string|max:500',
@@ -1066,16 +1152,16 @@ class AdminController extends Controller
         }
 
         $role->update($request->all());
-        
+
         // Handle permissions if provided
         if ($request->has('permissions')) {
             // You can implement permission logic here
         }
-        
+
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'role' => $role]);
         }
-        
+
         return redirect()->route('admin.roles.index')->with('success', 'Role updated successfully.');
     }
 
@@ -1085,14 +1171,14 @@ class AdminController extends Controller
     public function deleteRole($id)
     {
         $role = Role::findOrFail($id);
-        
+
         // Check if role has users
         if ($role->users()->count() > 0) {
             return redirect()->back()->with('error', 'Cannot delete role with assigned users');
         }
-        
+
         $role->delete();
-        
+
         return redirect()->route('admin.roles.index')->with('success', 'Role deleted successfully.');
     }
 
@@ -1143,7 +1229,7 @@ class AdminController extends Controller
     public function bulkDeleteRoles(Request $request)
     {
         $ids = $request->ids;
-        
+
         if (empty($ids)) {
             return response()->json(['error' => 'No roles selected'], 400);
         }
@@ -1155,7 +1241,7 @@ class AdminController extends Controller
         }
 
         $deleted = Role::whereIn('id', $ids)->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => "Successfully deleted {$deleted} role" . ($deleted > 1 ? 's' : '')
@@ -1170,7 +1256,7 @@ class AdminController extends Controller
         $roles = Role::withCount('users')->get();
 
         $filename = 'roles_export_' . date('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -1178,10 +1264,10 @@ class AdminController extends Controller
 
         $callback = function() use ($roles) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV header
             fputcsv($file, ['ID', 'Name', 'Description', 'Users Count', 'Created At']);
-            
+
             // CSV data
             foreach ($roles as $role) {
                 fputcsv($file, [
@@ -1192,7 +1278,7 @@ class AdminController extends Controller
                     $role->created_at ?? 'N/A'
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -1221,24 +1307,24 @@ class AdminController extends Controller
         $totalReviews = Review::count();
         $totalFavorites = Favorite::count();
         $avgRating = Review::avg('rating') ?? 0;
-        
+
         // Calculate real metrics
         $publishedBooks = Book::where('status', 1)->count();
         $draftBooks = Book::where('status', 0)->count();
-        
+
         // Reading completion rate (completed vs total reading progress)
         $completedReading = ReadingProgress::where('status', 'completed')->count();
         $completionRate = $totalViews > 0 ? round(($completedReading / $totalViews) * 100, 1) : 0;
-        
+
         // User satisfaction based on ratings (4-5 stars considered satisfied)
         $satisfiedReviews = Review::whereIn('rating', [4, 5])->count();
         $userSatisfaction = $totalReviews > 0 ? round(($satisfiedReviews / $totalReviews) * 100, 1) : 0;
-        
+
         // Average reading time (estimated from reading progress data)
         $avgReadingTime = ReadingProgress::whereNotNull('completed_at')
             ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, completed_at)) as avg_time')
             ->value('avg_time') ?? 4.2;
-        
+
         // Monthly statistics for trends
         $thisMonth = now()->startOfMonth();
         $usersThisMonth = User::where('created_at', '>=', $thisMonth)->count();
@@ -1246,7 +1332,7 @@ class AdminController extends Controller
         $downloadsThisMonth = Download::where('status', 'completed')
             ->where('created_at', '>=', $thisMonth)->count();
         $reviewsThisMonth = Review::where('create_at', '>=', $thisMonth)->count();
-        
+
         $stats = [
             'total_users' => $totalUsers,
             'total_books' => $totalBooks,
@@ -1302,9 +1388,9 @@ class AdminController extends Controller
             ->get();
 
         return view('admin.analytics', compact(
-            'stats', 
-            'popularBooks', 
-            'recentActivity', 
+            'stats',
+            'popularBooks',
+            'recentActivity',
             'categoryStats',
             'readingTrends',
             'downloadTrends'
@@ -1317,11 +1403,11 @@ class AdminController extends Controller
     public function exportAnalytics()
     {
         $filename = 'analytics_report_' . date('Y-m-d') . '.csv';
-        
+
         $headers = [
             'Metric', 'Value', 'Change', 'Date'
         ];
-        
+
         $data = [
             ['Total Users', User::count(), '+5%', date('Y-m-d')],
             ['Total Books', Book::count(), '+12%', date('Y-m-d')],
@@ -1329,18 +1415,18 @@ class AdminController extends Controller
             ['Total Reviews', Review::count(), '+15%', date('Y-m-d')],
             ['Avg Rating', Review::avg('rating') ?? '0.0', 'N/A', date('Y-m-d')],
         ];
-        
+
         $callback = function() use ($data) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $headers);
-            
+
             foreach ($data as $row) {
                 fputcsv($file, $row);
             }
-            
+
             fclose($file);
         };
-        
+
         return response()->stream($callback, 200, [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -1357,7 +1443,7 @@ class AdminController extends Controller
         $taggedBooks = $tags->sum('books_count');
         $popularTags = $tags->where('books_count', '>', 5)->count();
         $newThisMonth = 0; // Since created_at is null, we'll set this to 0
-        
+
         return view('admin.tags', compact('tags', 'totalTags', 'taggedBooks', 'popularTags', 'newThisMonth'));
     }
 
@@ -1384,7 +1470,7 @@ class AdminController extends Controller
         }
 
         $tag = \App\Models\Tag::create($request->all());
-        
+
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -1392,7 +1478,7 @@ class AdminController extends Controller
                 'tag' => $tag
             ]);
         }
-        
+
         return redirect()->route('admin.tags')->with('success', 'Tag created successfully.');
     }
 
@@ -1402,7 +1488,7 @@ class AdminController extends Controller
     public function editTag($id)
     {
         $tag = \App\Models\Tag::findOrFail($id);
-        
+
         return response()->json([
             'success' => true,
             'tag' => $tag
@@ -1415,7 +1501,7 @@ class AdminController extends Controller
     public function updateTag(Request $request, $id)
     {
         $tag = \App\Models\Tag::findOrFail($id);
-        
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:tags,name,'.$id,
             'description' => 'nullable|string|max:500',
@@ -1434,7 +1520,7 @@ class AdminController extends Controller
         }
 
         $tag->update($request->all());
-        
+
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -1442,7 +1528,7 @@ class AdminController extends Controller
                 'tag' => $tag
             ]);
         }
-        
+
         return redirect()->route('admin.tags')->with('success', 'Tag updated successfully.');
     }
 
@@ -1453,43 +1539,43 @@ class AdminController extends Controller
     {
         try {
             $tag = \App\Models\Tag::findOrFail($id);
-            
+
             // Check if tag has books
             $bookCount = $tag->books()->count();
             if ($bookCount > 0) {
                 $message = "Cannot delete tag. It contains {$bookCount} books. Please remove books from this tag first.";
-                
+
                 if (request()->expectsJson()) {
                     return response()->json([
                         'success' => false,
                         'message' => $message
                     ], 400);
                 }
-                
+
                 return back()->with('error', $message);
             }
-            
+
             $tag->delete();
-            
+
             if (request()->expectsJson()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Tag deleted successfully!'
                 ]);
             }
-            
+
             return redirect()->route('admin.tags')->with('success', 'Tag deleted successfully.');
-        
+
         } catch (\Exception $e) {
             $message = 'Error deleting tag: ' . $e->getMessage();
-            
+
             if (request()->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => $message
                 ]);
             }
-            
+
             return back()->with('error', $message);
         }
     }
@@ -1526,11 +1612,11 @@ class AdminController extends Controller
     public function bulkTagInfo(Request $request)
     {
         $ids = $request->ids;
-        
+
         if (empty($ids)) {
             return response()->json(['error' => 'No tags selected'], 400);
         }
-        
+
         $tags = Tag::whereIn('id', $ids)->get();
         return response()->json($tags);
     }
@@ -1541,7 +1627,7 @@ class AdminController extends Controller
     public function bulkDeleteTags(Request $request)
     {
         $ids = $request->ids;
-        
+
         if (empty($ids)) {
             return response()->json(['error' => 'No tags selected'], 400);
         }
@@ -1553,7 +1639,7 @@ class AdminController extends Controller
         }
 
         $deleted = Tag::whereIn('id', $ids)->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => "Successfully deleted {$deleted} tag" . ($deleted > 1 ? 's' : '')
@@ -1568,7 +1654,7 @@ class AdminController extends Controller
         $tags = Tag::withCount('books')->orderBy('name')->get();
 
         $filename = 'tags_export_' . date('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -1576,10 +1662,10 @@ class AdminController extends Controller
 
         $callback = function() use ($tags) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV header
             fputcsv($file, ['ID', 'Name', 'Description', 'Books Count']);
-            
+
             // CSV data
             foreach ($tags as $tag) {
                 fputcsv($file, [
@@ -1589,7 +1675,7 @@ class AdminController extends Controller
                     $tag->books_count
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -1602,12 +1688,12 @@ class AdminController extends Controller
     public function reviews()
     {
         $query = Review::with(['user', 'book']);
-        
+
         // Apply status filter
         if (request()->has('status') && request('status') !== '') {
             $query->where('status', request('status'));
         }
-        
+
         $reviews = $query->latest()->paginate(5);
         $totalReviews = Review::count();
         $avgRating = Review::avg('rating');
@@ -1615,7 +1701,7 @@ class AdminController extends Controller
         $approvedReviews = Review::where('status', 'approved')->count();
         $books = Book::all();
         $users = User::all();
-        
+
         return view('admin.reviews', compact('reviews', 'totalReviews', 'avgRating', 'pendingReviews', 'approvedReviews', 'books', 'users'));
     }
 
@@ -1640,11 +1726,11 @@ class AdminController extends Controller
         }
 
         $review = Review::create($request->all());
-        
+
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'review' => $review]);
         }
-        
+
         return redirect()->route('admin.reviews')->with('success', 'Review created successfully.');
     }
 
@@ -1652,6 +1738,15 @@ class AdminController extends Controller
      * Get review for editing.
      */
     public function editReview($id)
+    {
+        $review = Review::with(['user', 'book'])->findOrFail($id);
+        return response()->json(['success' => true, 'id' => $review->id, 'book_id' => $review->book_id, 'user_id' => $review->user_id, 'rating' => $review->rating, 'comment' => $review->comment, 'status' => $review->status, 'user' => $review->user, 'book' => $review->book]);
+    }
+
+    /**
+     * Get review details for viewing.
+     */
+    public function viewReview($id)
     {
         $review = Review::with(['user', 'book'])->findOrFail($id);
         return response()->json($review);
@@ -1663,7 +1758,7 @@ class AdminController extends Controller
     public function updateReview(Request $request, $id)
     {
         $review = Review::findOrFail($id);
-        
+
         $validator = Validator::make($request->all(), [
             'book_id' => 'required|exists:books,id',
             'user_id' => 'required|exists:users,id',
@@ -1680,11 +1775,11 @@ class AdminController extends Controller
         }
 
         $review->update($request->all());
-        
+
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'review' => $review]);
         }
-        
+
         return redirect()->route('admin.reviews')->with('success', 'Review updated successfully.');
     }
 
@@ -1696,16 +1791,16 @@ class AdminController extends Controller
         try {
             $review = Review::findOrFail($id);
             $review->update(['status' => 'approved']);
-            
+
             if (request()->expectsJson()) {
                 return response()->json([
-                    'success' => true, 
+                    'success' => true,
                     'message' => 'Review approved successfully.'
                 ]);
             }
-            
+
             return redirect()->route('admin.reviews')->with('success', 'Review approved successfully.');
-            
+
         } catch (\Exception $e) {
             if (request()->expectsJson()) {
                 return response()->json([
@@ -1713,7 +1808,7 @@ class AdminController extends Controller
                     'error' => 'Error approving review: ' . $e->getMessage()
                 ], 500);
             }
-            
+
             return redirect()->route('admin.reviews')->with('error', 'Error approving review.');
         }
     }
@@ -1726,16 +1821,16 @@ class AdminController extends Controller
         try {
             $review = Review::findOrFail($id);
             $review->update(['status' => 'rejected']);
-            
+
             if (request()->expectsJson()) {
                 return response()->json([
-                    'success' => true, 
+                    'success' => true,
                     'message' => 'Review rejected successfully.'
                 ]);
             }
-            
+
             return redirect()->route('admin.reviews')->with('success', 'Review rejected successfully.');
-            
+
         } catch (\Exception $e) {
             if (request()->expectsJson()) {
                 return response()->json([
@@ -1743,7 +1838,7 @@ class AdminController extends Controller
                     'error' => 'Error rejecting review: ' . $e->getMessage()
                 ], 500);
             }
-            
+
             return redirect()->route('admin.reviews')->with('error', 'Error rejecting review.');
         }
     }
@@ -1755,11 +1850,11 @@ class AdminController extends Controller
     {
         $review = Review::findOrFail($id);
         $review->delete();
-        
+
         if (request()->expectsJson()) {
             return response()->json(['success' => true, 'message' => 'Review deleted successfully.']);
         }
-        
+
         return redirect()->route('admin.reviews')->with('success', 'Review deleted successfully.');
     }
 
@@ -1769,13 +1864,13 @@ class AdminController extends Controller
     public function bulkDeleteReviews(Request $request)
     {
         $ids = $request->ids;
-        
+
         if (empty($ids)) {
             return response()->json(['error' => 'No reviews selected'], 400);
         }
 
         $deleted = Review::whereIn('id', $ids)->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => "Successfully deleted {$deleted} review" . ($deleted > 1 ? 's' : '')
@@ -1790,7 +1885,7 @@ class AdminController extends Controller
         $reviews = Review::with(['user', 'book'])->latest()->get();
 
         $filename = 'reviews_export_' . date('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -1798,10 +1893,10 @@ class AdminController extends Controller
 
         $callback = function() use ($reviews) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV header
             fputcsv($file, ['ID', 'Book', 'User', 'Rating', 'Comment', 'Status', 'Created At']);
-            
+
             // CSV data
             foreach ($reviews as $review) {
                 fputcsv($file, [
@@ -1814,7 +1909,7 @@ class AdminController extends Controller
                     $review->create_at?->format('Y-m-d H:i:s') ?? 'N/A'
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -1827,43 +1922,43 @@ class AdminController extends Controller
     public function readingProgress()
     {
         $query = ReadingProgress::with(['user', 'book']);
-        
+
         // Apply filters
         if (request()->has('status') && request('status') !== '') {
             $query->where('status', request('status'));
         }
-        
+
         if (request()->has('user_id') && request('user_id') !== '') {
             $query->where('user_id', request('user_id'));
         }
-        
+
         if (request()->has('book_id') && request('book_id') !== '') {
             $query->where('book_id', request('book_id'));
         }
-        
+
         $progress = $query->latest()->paginate(10);
-        
+
         // Real statistics
         $totalProgress = ReadingProgress::count();
         $activeReaders = ReadingProgress::distinct('user_id')->count();
         $completedBooks = ReadingProgress::where('status', 'completed')->count();
         $inProgressBooks = ReadingProgress::where('status', 'in_progress')->count();
-        
+
         // Calculate completion rate
         $completionRate = $totalProgress > 0 ? round(($completedBooks / $totalProgress) * 100, 1) : 0;
-        
+
         // Average reading time
         $avgReadingTime = ReadingProgress::whereNotNull('completed_at')
             ->whereNotNull('started_at')
             ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, started_at, completed_at)) as avg_time')
             ->value('avg_time') ?? 0;
-        
+
         // This month statistics
         $thisMonth = now()->startOfMonth();
         $progressThisMonth = ReadingProgress::where('created_at', '>=', $thisMonth)->count();
         $completedThisMonth = ReadingProgress::where('status', 'completed')
             ->where('completed_at', '>=', $thisMonth)->count();
-        
+
         // Most active readers
         $activeReadersList = ReadingProgress::with('user')
             ->selectRaw('user_id, COUNT(*) as progress_count')
@@ -1871,7 +1966,7 @@ class AdminController extends Controller
             ->orderBy('progress_count', 'desc')
             ->take(5)
             ->get();
-        
+
         // Popular books being read
         $popularBooks = ReadingProgress::with('book')
             ->selectRaw('book_id, COUNT(*) as reader_count')
@@ -1879,15 +1974,15 @@ class AdminController extends Controller
             ->orderBy('reader_count', 'desc')
             ->take(5)
             ->get();
-        
+
         $users = User::all();
         $books = Book::all();
-        
+
         return view('admin.reading-progress', compact(
-            'progress', 
-            'totalProgress', 
-            'activeReaders', 
-            'completedBooks', 
+            'progress',
+            'totalProgress',
+            'activeReaders',
+            'completedBooks',
             'inProgressBooks',
             'completionRate',
             'avgReadingTime',
@@ -1931,12 +2026,12 @@ class AdminController extends Controller
         }
 
         // Calculate progress percentage if not provided
-        $progressPercentage = $request->progress_percentage ?? 
+        $progressPercentage = $request->progress_percentage ??
             round(($request->current_page / $request->total_pages) * 100, 1);
 
         $data = $request->all();
         $data['progress_percentage'] = $progressPercentage;
-        
+
         // Set timestamps based on status
         if ($request->status === "in_progress" && !$request->started_at) {
             $data['started_at'] = now();
@@ -1945,13 +2040,13 @@ class AdminController extends Controller
             $data['completed_at'] = now();
             $data['last_read_at'] = now();
         }
-        
+
         $readingProgress = ReadingProgress::create($data);
-        
+
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'progress' => $readingProgress]);
         }
-        
+
         return redirect()->route('admin.reading-progress')->with('success', 'Reading progress created successfully.');
     }
 
@@ -1970,7 +2065,7 @@ class AdminController extends Controller
     public function updateReadingProgress(Request $request, $id)
     {
         $progress = ReadingProgress::findOrFail($id);
-        
+
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|exists:users,id',
             'book_id' => 'required|exists:books,id',
@@ -1988,13 +2083,13 @@ class AdminController extends Controller
         }
 
         // Calculate progress percentage if not provided
-        $progressPercentage = $request->progress_percentage ?? 
+        $progressPercentage = $request->progress_percentage ??
             round(($request->current_page / $request->total_pages) * 100, 1);
 
         $data = $request->all();
         $data['progress_percentage'] = $progressPercentage;
         $data['last_read_at'] = now();
-        
+
         // Update timestamps based on status changes
         if ($progress->status !== "in_progress" && $request->status === "in_progress" && !$progress->started_at) {
             $data['started_at'] = now();
@@ -2002,13 +2097,13 @@ class AdminController extends Controller
         if ($progress->status !== "completed" && $request->status === "completed") {
             $data['completed_at'] = now();
         }
-        
+
         $progress->update($data);
-        
+
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'progress' => $progress]);
         }
-        
+
         return redirect()->route('admin.reading-progress')->with('success', 'Reading progress updated successfully.');
     }
 
@@ -2028,11 +2123,11 @@ class AdminController extends Controller
     {
         $progress = ReadingProgress::findOrFail($id);
         $progress->delete();
-        
+
         if (request()->expectsJson()) {
             return response()->json(['success' => true, 'message' => 'Reading progress deleted successfully.']);
         }
-        
+
         return redirect()->route('admin.reading-progress')->with('success', 'Reading progress deleted successfully.');
     }
 
@@ -2042,13 +2137,13 @@ class AdminController extends Controller
     public function bulkDeleteReadingProgress(Request $request)
     {
         $ids = $request->ids;
-        
+
         if (empty($ids)) {
             return response()->json(['error' => 'No reading progress entries selected'], 400);
         }
 
         $deleted = ReadingProgress::whereIn('id', $ids)->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => "Successfully deleted {$deleted} reading progress entr" . ($deleted > 1 ? 'ies' : 'y')
@@ -2061,16 +2156,16 @@ class AdminController extends Controller
     public function exportReadingProgress(Request $request)
     {
         $query = ReadingProgress::with(['user', 'book']);
-        
+
         // Apply filters if present
         if (request()->has('status') && request('status') !== '') {
             $query->where('status', request('status'));
         }
-        
+
         $progress = $query->latest()->get();
 
         $filename = 'reading_progress_export_' . date('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -2078,10 +2173,10 @@ class AdminController extends Controller
 
         $callback = function() use ($progress) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV header
             fputcsv($file, ['ID', 'User', 'Book', 'Current Page', 'Total Pages', 'Progress %', 'Status', 'Started At', 'Last Read At', 'Completed At', 'Created At']);
-            
+
             // CSV data
             foreach ($progress as $item) {
                 fputcsv($file, [
@@ -2098,7 +2193,7 @@ class AdminController extends Controller
                     $item->created_at?->format('Y-m-d H:i:s') ?? 'N/A'
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -2112,22 +2207,22 @@ class AdminController extends Controller
     {
         // Get base query with relationships
         $query = Favorite::with(['user', 'book.author', 'book.categories']);
-        
+
         // Apply filters
         if (request()->has('user_id') && request('user_id') !== '') {
             $query->where('user_id', request('user_id'));
         }
-        
+
         if (request()->has('book_id') && request('book_id') !== '') {
             $query->where('book_id', request('book_id'));
         }
-        
+
         if (request()->has('category_id') && request('category_id') !== '') {
             $query->whereHas('book.categories', function($q) {
                 $q->where('categories.id', request('category_id'));
             });
         }
-        
+
         if (request()->has('date_range') && request('date_range') !== '') {
             switch(request('date_range')) {
                 case 'today':
@@ -2144,16 +2239,16 @@ class AdminController extends Controller
                     break;
             }
         }
-        
+
         $favorites = $query->latest()->paginate(10);
-        
+
         // Calculate real statistics
         $totalFavorites = Favorite::count();
         $activeUsers = Favorite::distinct('user_id')->count('user_id');
         $favoritesThisMonth = Favorite::whereMonth('create_at', now()->month)->count();
         $favoritesLastMonth = Favorite::whereMonth('create_at', now()->subMonth()->month)->count();
         $monthlyGrowth = $favoritesLastMonth > 0 ? (($favoritesThisMonth - $favoritesLastMonth) / $favoritesLastMonth) * 100 : 0;
-        
+
         // Most favorited book this week
         $mostFavoritedBookData = Favorite::select('book_id')
             ->selectRaw('COUNT(*) as favorites_count')
@@ -2161,7 +2256,7 @@ class AdminController extends Controller
             ->groupBy('book_id')
             ->orderByDesc('favorites_count')
             ->first();
-        
+
         $mostFavoritedBook = null;
         if ($mostFavoritedBookData) {
             $mostFavoritedBook = Book::with(['author', 'categories'])->find($mostFavoritedBookData->book_id);
@@ -2169,7 +2264,7 @@ class AdminController extends Controller
                 $mostFavoritedBook->favorites_count = $mostFavoritedBookData->favorites_count;
             }
         }
-        
+
         // Get most active users (users with most favorites)
         $mostActiveUsers = User::withCount(['favorites' => function($query) {
                 $query->whereMonth('create_at', now()->month);
@@ -2178,7 +2273,7 @@ class AdminController extends Controller
             ->orderByDesc('favorites_count')
             ->take(5)
             ->get();
-        
+
         // Get most popular books (books with most favorites)
         $popularBooks = Book::withCount(['favorites' => function($query) {
                 $query->whereMonth('create_at', now()->month);
@@ -2187,17 +2282,17 @@ class AdminController extends Controller
             ->orderByDesc('favorites_count')
             ->take(5)
             ->get();
-        
+
         // Get all users and books for filters
         $users = User::orderBy('name')->get();
         $books = Book::orderBy('title')->get();
         $categories = \App\Models\Category::orderBy('name')->get();
-        
+
         return view('admin.favorites', compact(
-            'favorites', 
-            'totalFavorites', 
-            'activeUsers', 
-            'favoritesThisMonth', 
+            'favorites',
+            'totalFavorites',
+            'activeUsers',
+            'favoritesThisMonth',
             'monthlyGrowth',
             'mostFavoritedBook',
             'mostActiveUsers',
@@ -2217,21 +2312,21 @@ class AdminController extends Controller
             'user_id' => 'required|exists:users,id',
             'book_id' => 'required|exists:books,id',
         ]);
-        
+
         // Check if favorite already exists
         $existing = Favorite::where('user_id', $request->user_id)
                             ->where('book_id', $request->book_id)
                             ->first();
-        
+
         if ($existing) {
             return response()->json([
                 'success' => false,
                 'message' => 'This book is already in the user\'s favorites.'
             ]);
         }
-        
+
         $favorite = Favorite::create($request->all());
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Favorite added successfully!',
@@ -2245,12 +2340,12 @@ class AdminController extends Controller
     public function showFavorite($id)
     {
         $favorite = Favorite::with(['user', 'book.author', 'book.categories'])->findOrFail($id);
-        
+
         // Get reading history for this book and user
         $readingHistory = ReadingProgress::where('user_id', $favorite->user_id)
                                        ->where('book_id', $favorite->book_id)
                                        ->get();
-        
+
         return response()->json([
             'favorite' => $favorite,
             'reading_history' => $readingHistory
@@ -2264,7 +2359,7 @@ class AdminController extends Controller
     {
         $favorite = Favorite::findOrFail($id);
         $favorite->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Favorite removed successfully!'
@@ -2280,9 +2375,9 @@ class AdminController extends Controller
             'ids' => 'required|array',
             'ids.*' => 'exists:favorites,id'
         ]);
-        
+
         Favorite::whereIn('id', $request->ids)->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => count($request->ids) . ' favorites removed successfully!'
@@ -2295,26 +2390,26 @@ class AdminController extends Controller
     public function exportFavorites(Request $request)
     {
         $query = Favorite::with(['user', 'book.author', 'book.categories']);
-        
+
         // Apply same filters as main page
         if (request()->has('user_id') && request('user_id') !== '') {
             $query->where('user_id', request('user_id'));
         }
-        
+
         if (request()->has('book_id') && request('book_id') !== '') {
             $query->where('book_id', request('book_id'));
         }
-        
+
         if (request()->has('category_id') && request('category_id') !== '') {
             $query->whereHas('book.categories', function($q) {
                 $q->where('categories.id', request('category_id'));
             });
         }
-        
+
         $favorites = $query->latest()->get();
-        
+
         $filename = "favorites_export_" . date('Y-m-d_H-i-s') . ".csv";
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
@@ -2322,13 +2417,13 @@ class AdminController extends Controller
 
         $callback = function() use ($favorites) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV header
             fputcsv($file, [
-                'ID', 'User Name', 'User Email', 'Book Title', 'Book Author', 
+                'ID', 'User Name', 'User Email', 'Book Title', 'Book Author',
                 'Category', 'Added Date', 'Added Time'
             ]);
-            
+
             // CSV data
             foreach ($favorites as $favorite) {
                 $categoryNames = $favorite->book->categories->pluck('name')->join(', ') ?: 'N/A';
@@ -2343,7 +2438,7 @@ class AdminController extends Controller
                     $favorite->create_at?->format('H:i:s') ?? 'N/A'
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -2357,20 +2452,20 @@ class AdminController extends Controller
     {
         // Get base query with relationships
         $query = ReadingProgress::with(['user', 'book.author', 'book.categories']);
-        
+
         // Apply filters
         if (request()->has('user_id') && request('user_id') !== '') {
             $query->where('user_id', request('user_id'));
         }
-        
+
         if (request()->has('book_id') && request('book_id') !== '') {
             $query->where('book_id', request('book_id'));
         }
-        
+
         if (request()->has('status') && request('status') !== '') {
             $query->where('status', request('status'));
         }
-        
+
         if (request()->has('date_range') && request('date_range') !== '') {
             switch(request('date_range')) {
                 case 'today':
@@ -2387,16 +2482,16 @@ class AdminController extends Controller
                     break;
             }
         }
-        
+
         $history = $query->latest()->paginate(4);
-        
+
         // Handle AJAX request for pagination
         if (request()->ajax() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
             $html = '';
             foreach ($history as $item) {
                 $html .= view('admin.partials.reading-history-row', compact('item'))->render();
             }
-            
+
             return response()->json([
                 'success' => true,
                 'html' => $html,
@@ -2406,28 +2501,28 @@ class AdminController extends Controller
                 'total' => $history->total()
             ]);
         }
-        
+
         // Calculate real statistics
         $totalSessions = ReadingProgress::count();
         $completedBooks = ReadingProgress::where('status', 'completed')->distinct('book_id')->count('book_id');
         $activeReaders = ReadingProgress::where('created_at', '>=', now()->subDays(7))->distinct('user_id')->count('user_id');
         $avgReadingTime = $this->calculateAverageReadingTime();
-        
+
         // Get users and books for filters
         $users = User::orderBy('name')->get();
         $books = Book::orderBy('title')->get();
-        
-        return view('admin.reading-history', compact(
-            'history', 
-            'totalSessions', 
-            'completedBooks', 
-            'activeReaders', 
+
+        return view('admin.reading-history.index', compact(
+            'history',
+            'totalSessions',
+            'completedBooks',
+            'activeReaders',
             'avgReadingTime',
             'users',
             'books'
         ));
     }
-    
+
     /**
      * Delete reading history entry.
      */
@@ -2435,13 +2530,13 @@ class AdminController extends Controller
     {
         $progress = ReadingProgress::findOrFail($id);
         $progress->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Reading history deleted successfully'
         ]);
     }
-    
+
     /**
      * Add book to favorites.
      */
@@ -2451,52 +2546,52 @@ class AdminController extends Controller
             'user_id' => 'required|exists:users,id',
             'book_id' => 'required|exists:books,id',
         ]);
-        
+
         // Check if favorite already exists
         $existing = Favorite::where('user_id', $request->user_id)
                             ->where('book_id', $request->book_id)
                             ->first();
-        
+
         if ($existing) {
             return response()->json([
                 'success' => false,
                 'message' => 'This book is already in the user\'s favorites.'
             ]);
         }
-        
+
         $favorite = Favorite::create($request->all());
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Book added to favorites successfully!',
             'favorite' => $favorite->load(['user', 'book'])
         ]);
     }
-    
+
     /**
      * Export reading history to CSV.
      */
     public function exportReadingHistory(Request $request)
     {
         $query = ReadingProgress::with(['user', 'book.author', 'book.categories']);
-        
+
         // Apply same filters as main page
         if (request()->has('user_id') && request('user_id') !== '') {
             $query->where('user_id', request('user_id'));
         }
-        
+
         if (request()->has('book_id') && request('book_id') !== '') {
             $query->where('book_id', request('book_id'));
         }
-        
+
         if (request()->has('status') && request('status') !== '') {
             $query->where('status', request('status'));
         }
-        
+
         $history = $query->latest()->get();
-        
+
         $filename = "reading_history_export_" . date('Y-m-d_H-i-s') . ".csv";
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
@@ -2504,13 +2599,13 @@ class AdminController extends Controller
 
         $callback = function() use ($history) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV header
             fputcsv($file, [
-                'Created', 'User Name', 'User Email', 'Book Title', 'Book Author', 
+                'Created', 'User Name', 'User Email', 'Book Title', 'Book Author',
                 'Categories', 'Started', 'Last Updated', 'Progress', 'Status', 'Pages Read', 'Total Pages'
             ]);
-            
+
             // CSV data
             foreach ($history as $item) {
                 $categoryNames = $item->book->categories->pluck('name')->join(', ') ?: 'N/A';
@@ -2529,13 +2624,13 @@ class AdminController extends Controller
                     $item->book->pages ?? 0
                 ]);
             }
-            
+
             fclose($file);
         };
 
         return response()->stream($callback, 200, $headers);
     }
-    
+
     /**
      * Calculate average reading time.
      */
@@ -2544,25 +2639,25 @@ class AdminController extends Controller
         $sessions = ReadingProgress::whereNotNull('started_at')
                                     ->whereNotNull('completed_at')
                                     ->get();
-        
+
         if ($sessions->isEmpty()) {
             return '0h 0m';
         }
-        
+
         $totalMinutes = 0;
         foreach ($sessions as $session) {
             $start = \Carbon\Carbon::parse($session->started_at);
             $end = \Carbon\Carbon::parse($session->completed_at);
             $totalMinutes += $start->diffInMinutes($end);
         }
-        
+
         $avgMinutes = $totalMinutes / $sessions->count();
         $hours = floor($avgMinutes / 60);
         $minutes = $avgMinutes % 60;
-        
+
         return "{$hours}h {$minutes}m";
     }
-    
+
     /**
      * Get reading sessions for a user and book.
      */
@@ -2581,9 +2676,23 @@ class AdminController extends Controller
     public function downloads()
     {
         $downloads = Download::with(['user', 'book'])->latest()->paginate(10);
-        return view('admin.downloads', compact('downloads'));
+        
+        // Real statistics
+        $totalDownloads = Download::count();
+        $completedDownloads = Download::where('status', 'completed')->count();
+        $uniqueUsers = Download::distinct('user_id')->count();
+        $thisMonth = now()->startOfMonth();
+        $downloadsThisMonth = Download::where('created_at', '>=', $thisMonth)->count();
+        $uniqueUsersThisMonth = Download::where('created_at', '>=', $thisMonth)->distinct('user_id')->count();
+        
+        // Monthly growth
+        $lastMonth = now()->subMonth()->startOfMonth();
+        $lastMonthDownloads = Download::whereBetween('created_at', [$lastMonth, $thisMonth])->count();
+        $monthlyGrowth = $lastMonthDownloads > 0 ? round((($downloadsThisMonth - $lastMonthDownloads) / $lastMonthDownloads) * 100, 1) : 0;
+        
+        return view('admin.downloads', compact('downloads', 'totalDownloads', 'completedDownloads', 'uniqueUsers', 'downloadsThisMonth', 'uniqueUsersThisMonth', 'monthlyGrowth'));
     }
-    
+
     /**
      * Show download details.
      */
@@ -2595,24 +2704,24 @@ class AdminController extends Controller
             'download' => $download
         ]);
     }
-    
+
     /**
      * Re-download a file.
      */
     public function reDownload($id)
     {
         $download = Download::findOrFail($id);
-        
+
         // Here you would implement the actual re-download logic
         // For now, we'll just return a success response
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Download started successfully',
             'download_url' => $download->file_path ?? '#'
         ]);
     }
-    
+
     /**
      * Delete download record.
      */
@@ -2620,7 +2729,7 @@ class AdminController extends Controller
     {
         $download = Download::findOrFail($id);
         $download->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Download deleted successfully'
@@ -2638,7 +2747,7 @@ class AdminController extends Controller
         $totalDownloads = Download::count();
         $totalFavorites = Favorite::count();
         $totalReadingProgress = ReadingProgress::count();
-        
+
         // Get recent activity
         $recentBooks = Book::latest()->take(5)->get();
         $recentUsers = User::latest()->take(5)->get();
@@ -2646,12 +2755,12 @@ class AdminController extends Controller
                             ->orderByDesc('downloads_count')
                             ->take(5)
                             ->get();
-        
+
         return view('admin.statistics', compact(
-            'totalBooks', 
-            'totalUsers', 
-            'totalDownloads', 
-            'totalFavorites', 
+            'totalBooks',
+            'totalUsers',
+            'totalDownloads',
+            'totalFavorites',
             'totalReadingProgress',
             'recentBooks',
             'recentUsers',
@@ -2674,7 +2783,7 @@ class AdminController extends Controller
             'email_notifications' => config('app.email_notifications', true),
             'max_upload_size' => config('app.max_upload_size', '10MB'),
         ];
-        
+
         return view('admin.settings', compact('settings'));
     }
 
@@ -2691,22 +2800,22 @@ class AdminController extends Controller
             'light' => 'Light Theme',
             'modern' => 'Modern Theme',
         ];
-        
+
         $layoutSettings = [
             'sidebar_collapsed' => config('app.sidebar_collapsed', false),
             'show_notifications' => config('app.show_notifications', true),
             'compact_mode' => config('app.compact_mode', false),
         ];
-        
+
         $branding = [
             'site_name' => config('app.name', 'E-Library'),
             'logo_url' => config('app.logo_url', '/images/logo.png'),
             'favicon_url' => config('app.favicon_url', '/favicon.ico'),
         ];
-        
+
         return view('admin.appearance', compact(
             'currentTheme',
-            'availableThemes', 
+            'availableThemes',
             'layoutSettings',
             'branding'
         ));
@@ -2726,7 +2835,7 @@ class AdminController extends Controller
             'logo_url' => 'url|nullable',
             'favicon_url' => 'url|nullable',
         ]);
-        
+
         // Update configuration (you could also save to .env file)
         config(['app.theme' => $request->theme]);
         config(['app.sidebar_collapsed' => $request->sidebar_collapsed]);
@@ -2735,7 +2844,7 @@ class AdminController extends Controller
         config(['app.name' => $request->site_name]);
         config(['app.logo_url' => $request->logo_url]);
         config(['app.favicon_url' => $request->favicon_url]);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Appearance settings saved successfully!'
@@ -2781,14 +2890,91 @@ class AdminController extends Controller
             ->take(5)
             ->get();
 
+        // Create realistic reports data
+        $reports = [
+            [
+                'id' => 1,
+                'name' => 'User Activity Report',
+                'type' => 'User Analytics',
+                'description' => 'Monthly user engagement and activity patterns',
+                'generated_by' => auth()->user()->name ?? 'System',
+                'generated_at' => now()->subDays(2)->format('M d, Y'),
+                'status' => 'completed',
+                'file_size' => '2.4 MB',
+                'icon' => 'fas fa-users',
+                'color' => 'primary'
+            ],
+            [
+                'id' => 2,
+                'name' => 'Book Statistics Report',
+                'type' => 'Content Analytics',
+                'description' => 'Popular books and category distribution analysis',
+                'generated_by' => auth()->user()->name ?? 'System',
+                'generated_at' => now()->subDays(5)->format('M d, Y'),
+                'status' => 'completed',
+                'file_size' => '1.8 MB',
+                'icon' => 'fas fa-book',
+                'color' => 'success'
+            ],
+            [
+                'id' => 3,
+                'name' => 'Download Statistics Report',
+                'type' => 'Usage Analytics',
+                'description' => 'Weekly download trends and user behavior',
+                'generated_by' => auth()->user()->name ?? 'System',
+                'generated_at' => now()->subDays(1)->format('M d, Y'),
+                'status' => 'completed',
+                'file_size' => '3.1 MB',
+                'icon' => 'fas fa-download',
+                'color' => 'info'
+            ],
+            [
+                'id' => 4,
+                'name' => 'Review Analysis Report',
+                'type' => 'Quality Analytics',
+                'description' => 'User feedback and rating analysis',
+                'generated_by' => auth()->user()->name ?? 'System',
+                'generated_at' => now()->subHours(6)->format('M d, Y'),
+                'status' => 'completed',
+                'file_size' => '1.2 MB',
+                'icon' => 'fas fa-star',
+                'color' => 'warning'
+            ],
+            [
+                'id' => 5,
+                'name' => 'Financial Summary Report',
+                'type' => 'Business Analytics',
+                'description' => 'Revenue and subscription metrics',
+                'generated_by' => auth()->user()->name ?? 'System',
+                'generated_at' => now()->subDays(3)->format('M d, Y'),
+                'status' => 'completed',
+                'file_size' => '2.7 MB',
+                'icon' => 'fas fa-chart-line',
+                'color' => 'secondary'
+            ],
+            [
+                'id' => 6,
+                'name' => 'System Performance Report',
+                'type' => 'Technical Analytics',
+                'description' => 'Server performance and response times',
+                'generated_by' => auth()->user()->name ?? 'System',
+                'generated_at' => now()->subHours(12)->format('M d, Y'),
+                'status' => 'in_progress',
+                'file_size' => '0.9 MB',
+                'icon' => 'fas fa-tachometer-alt',
+                'color' => 'danger'
+            ]
+        ];
+
         return view('admin.reports', compact(
-            'stats', 
-            'recentActivity', 
-            'popularBooks', 
-            'categoryStats'
+            'stats',
+            'recentActivity',
+            'popularBooks',
+            'categoryStats',
+            'reports'
         ));
     }
-    
+
     /**
      * View report details.
      */
@@ -2797,16 +2983,16 @@ class AdminController extends Controller
         try {
             // Generate different types of reports based on ID
             $reportData = $this->generateReportData($id);
-            
+
             return view('admin.reports.view', compact('reportData', 'id'));
         } catch (\Exception $e) {
             \Log::error('Error viewing report: ' . $e->getMessage());
-            
+
             // Return to reports page with error message
             return redirect()->route('admin.reports')->with('error', 'Failed to load report details: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * Download report.
      */
@@ -2814,18 +3000,18 @@ class AdminController extends Controller
     {
         try {
             $reportData = $this->generateReportData($id);
-            
+
             // Generate CSV or PDF based on report type
             $filename = $this->generateReportFile($reportData, $id);
-            
+
             return response()->download($filename);
         } catch (\Exception $e) {
             \Log::error('Error downloading report: ' . $e->getMessage());
-            
+
             return redirect()->route('admin.reports')->with('error', 'Failed to download report: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * Share report.
      */
@@ -2833,18 +3019,18 @@ class AdminController extends Controller
     {
         try {
             $reportData = $this->generateReportData($id);
-            
+
             // Generate shareable link or embed code
             $shareUrl = route('admin.reports.view', $id);
-            
+
             return view('admin.reports.share', compact('shareUrl', 'reportData', 'id'));
         } catch (\Exception $e) {
             \Log::error('Error sharing report: ' . $e->getMessage());
-            
+
             return redirect()->route('admin.reports')->with('error', 'Failed to load share page: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * Generate report data based on report ID.
      */
@@ -2865,7 +3051,7 @@ class AdminController extends Controller
                             'new_users' => User::where('created_at', '>=', now()->subDays(30))->count(),
                         ]
                     ];
-                    
+
                 case 2: // Download Statistics Report
                     return [
                         'title' => 'Download Statistics Report',
@@ -2879,7 +3065,7 @@ class AdminController extends Controller
                             'failed_downloads' => Download::where('status', 'failed')->count(),
                         ]
                     ];
-                    
+
                 case 3: // Book Performance Report
                     return [
                         'title' => 'Book Performance Report',
@@ -2896,7 +3082,7 @@ class AdminController extends Controller
                             'avg_downloads_per_book' => Download::where('status', 'completed')->count() / max(Book::count(), 1),
                         ]
                     ];
-                    
+
                 default:
                     return [
                         'title' => 'General System Report',
@@ -2910,7 +3096,7 @@ class AdminController extends Controller
             throw new \Exception('Failed to generate report data: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * Generate report file for download.
      */
@@ -2918,20 +3104,20 @@ class AdminController extends Controller
     {
         $filename = "report_{$id}_" . date('Y-m-d') . ".csv";
         $filepath = storage_path("app/public/reports/{$filename}");
-        
+
         // Ensure directory exists
         $directory = dirname($filepath);
         if (!is_dir($directory)) {
             mkdir($directory, 0755, true);
         }
-        
+
         $handle = fopen($filepath, 'w');
-        
+
         // Add CSV headers
         fputcsv($handle, [$reportData['title']]);
         fputcsv($handle, ['Generated on: ' . now()->format('Y-m-d H:i:s')]);
         fputcsv($handle, []);
-        
+
         // Add statistics
         if (!empty($reportData['stats'])) {
             fputcsv($handle, ['Statistics']);
@@ -2940,15 +3126,15 @@ class AdminController extends Controller
             }
             fputcsv($handle, []);
         }
-        
+
         // Add data based on report type
         if ($reportData['data']->isNotEmpty()) {
             $firstItem = $reportData['data']->first();
             $headers = array_keys($firstItem->toArray());
-            
+
             fputcsv($handle, ['Data']);
             fputcsv($handle, $headers);
-            
+
             foreach ($reportData['data'] as $item) {
                 $row = [];
                 foreach ($headers as $header) {
@@ -2961,9 +3147,9 @@ class AdminController extends Controller
                 fputcsv($handle, $row);
             }
         }
-        
+
         fclose($handle);
-        
+
         return $filepath;
     }
 
@@ -2981,12 +3167,12 @@ class AdminController extends Controller
     public function authorDashboard()
     {
         $user = auth()->user();
-        
+
         // Get author-specific statistics
         $totalBooks = Book::where('author_id', $user->id)->count();
         $publishedBooks = Book::where('author_id', $user->id)->where('status', 1)->count();
         $draftBooks = Book::where('author_id', $user->id)->where('status', 0)->count();
-        
+
         $stats = [
             'total_books' => $totalBooks,
             'published_books' => $publishedBooks,
@@ -3037,7 +3223,7 @@ class AdminController extends Controller
 
         // Get recent activity for this author
         $recentActivity = [];
-        
+
         // Recent book activities
         $recentBookActivities = Book::where('author_id', $user->id)
             ->latest()
@@ -3046,8 +3232,8 @@ class AdminController extends Controller
             ->map(function($book) {
                 return [
                     'icon' => 'fa-book',
-                    'text' => $book->status === 1 ? 
-                        "Published book: {$book->title}" : 
+                    'text' => $book->status === 1 ?
+                        "Published book: {$book->title}" :
                         "Updated book: {$book->title}",
                     'time' => \Carbon\Carbon::parse($book->created_at)->diffForHumans()
                 ];
@@ -3074,17 +3260,17 @@ class AdminController extends Controller
             ->sortByDesc('time')
             ->take(5)
             ->values();
-        
+
         return view('author.dashboard', compact('stats', 'recentBooks', 'popularBooks', 'recentReviews', 'recentActivity'));
     }
-    
+
     /**
      * Display author books index page (all books).
      */
     public function authorBooksIndex()
     {
         $user = auth()->user();
-        
+
         // Get all author's books with reviews for rating calculations
         $books = Book::where('author_id', $user->id)
             ->with(['author', 'category', 'reviews' => function($query) {
@@ -3095,17 +3281,17 @@ class AdminController extends Controller
             }])
             ->latest()
             ->paginate(10);
-        
+
         return view('author.books.index', compact('books'));
     }
-    
+
     /**
      * Display author published books page.
      */
     public function authorBooksPublished()
     {
         $user = auth()->user();
-        
+
         // Get only published books with reviews for rating calculations
         $books = Book::where('author_id', $user->id)
             ->where('status', 1)
@@ -3117,54 +3303,54 @@ class AdminController extends Controller
             }])
             ->latest()
             ->paginate(10);
-        
+
         return view('author.books.published', compact('books'));
     }
-    
+
     /**
      * Display author draft books page.
      */
     public function authorBooksDrafts()
     {
         $user = auth()->user();
-        
+
         // Get only draft books
         $books = Book::where('author_id', $user->id)
             ->where('status', 0)
             ->with(['author', 'category', 'reviews'])
             ->latest()
             ->paginate(10);
-        
+
         return view('author.books.drafts', compact('books'));
     }
-    
+
     /**
      * Get book details for AJAX request.
      */
     public function getBookDetails($id)
     {
         $user = auth()->user();
-        
+
         $book = Book::where('id', $id)
             ->where('author_id', $user->id)
             ->with(['author', 'category', 'reviews' => function($query) {
                 $query->where('status', 1); // Only approved reviews
             }])
             ->firstOrFail();
-            
+
         return response()->json([
             'success' => true,
             'book' => $book
         ]);
     }
-    
+
     /**
      * Display author book analytics.
      */
     public function authorBookAnalytics()
     {
         $user = auth()->user();
-        
+
         // Get all author's books with their statistics
         $books = Book::where('author_id', $user->id)
             ->with(['reviews', 'favorites'])
@@ -3179,7 +3365,7 @@ class AdminController extends Controller
 
         // Get recent activity
         $recentActivity = [];
-        
+
         // Recent book activities
         $recentBookActivities = Book::where('author_id', $user->id)
             ->latest()
@@ -3188,13 +3374,13 @@ class AdminController extends Controller
             ->map(function($book) {
                 return [
                     'icon' => 'fa-book',
-                    'text' => $book->status === 1 ? 
-                        'Published: ' . $book->title : 
+                    'text' => $book->status === 1 ?
+                        'Published: ' . $book->title :
                         'Updated: ' . $book->title,
                     'time' => \Carbon\Carbon::parse($book->updated_at)->diffForHumans()
                 ];
             });
-        
+
         // Recent review activities
         $recentReviewActivities = Review::whereHas('book', function($query) use ($user) {
             $query->where('author_id', $user->id);
@@ -3210,13 +3396,13 @@ class AdminController extends Controller
                     'time' => \Carbon\Carbon::parse($review->created_at)->diffForHumans()
                 ];
             });
-        
+
         // Merge activities
         $recentActivity = $recentBookActivities->merge($recentReviewActivities)
             ->sortByDesc('time')
             ->take(5)
             ->values();
-        
+
         // Get analytics data
         $analytics = [
             'total_books' => Book::where('author_id', $user->id)->count(),
@@ -3233,17 +3419,17 @@ class AdminController extends Controller
                 $query->where('author_id', $user->id);
             })->count(),
         ];
-        
+
         return view('author.books.analytics', compact('analytics', 'books', 'topBooks', 'recentActivity'));
     }
-    
+
     /**
      * Display author reviews page.
      */
     public function authorReviews()
     {
         $user = auth()->user();
-        
+
         // Get author's reviews with pagination
         $reviews = Review::whereHas('book', function($query) use ($user) {
             $query->where('author_id', $user->id);
@@ -3251,7 +3437,7 @@ class AdminController extends Controller
         ->with('book')
         ->latest()
         ->paginate(10);
-        
+
         return view('author.reviews', compact('reviews'));
     }
 
@@ -3261,7 +3447,7 @@ class AdminController extends Controller
     public function authorReadingProgress()
     {
         $user = auth()->user();
-        
+
         // Get reading progress for author's books
         $readingProgress = \App\Models\ReadingProgress::whereHas('book', function($query) use ($user) {
                 $query->where('author_id', $user->id);
@@ -3279,12 +3465,12 @@ class AdminController extends Controller
     public function authorFavorites()
     {
         $user = auth()->user();
-        
+
         // Get favorites for author's books
         $favorites = \App\Models\Favorite::whereHas('book', function($query) use ($user) {
                 $query->where('author_id', $user->id);
             })
-            ->with(['user', 'book'])
+            ->with(['user', 'book.categories'])
             ->latest()
             ->paginate(5);
 
@@ -3299,7 +3485,7 @@ class AdminController extends Controller
         $recentFavorites = \App\Models\Favorite::whereHas('book', function($query) use ($user) {
                 $query->where('author_id', $user->id);
             })
-            ->with(['user', 'book'])
+            ->with(['user', 'book.categories'])
             ->latest()
             ->take(5)
             ->get();
@@ -3313,7 +3499,7 @@ class AdminController extends Controller
     public function authorDownloads()
     {
         $user = auth()->user();
-        
+
         // Get downloads for author's books
         $downloads = \App\Models\Download::whereHas('book', function($query) use ($user) {
                 $query->where('author_id', $user->id);
@@ -3361,7 +3547,7 @@ class AdminController extends Controller
     public function authorReadingHistory()
     {
         $user = auth()->user();
-        
+
         // Get reading history for current user
         $readingHistory = \App\Models\ReadingHistory::where('user_id', $user->id)
             ->with('book')
@@ -3385,17 +3571,8 @@ class AdminController extends Controller
         ];
 
         // Get user's books for the dropdown
-        $userBooks = \App\Models\Book::where('author_id', $user->id)->get();
-        if ($userBooks->isEmpty()) {
-            $userBooks = collect();
-        }
-
-        return view('author.reading-history.index', compact('readingHistory', 'readingStats', 'userBooks'));
     }
 
-    /**
-     * Show reading history entry details.
-     */
     public function showReadingHistory($id)
     {
         $readingHistory = \App\Models\ReadingHistory::with('book')->findOrFail($id);
@@ -3510,7 +3687,7 @@ class AdminController extends Controller
     public function authorMyFavorites()
     {
         $user = auth()->user();
-        
+
         // Get user's favorites
         $favorites = \App\Models\Favorite::where('user_id', $user->id)
             ->with('book')
@@ -3575,20 +3752,38 @@ class AdminController extends Controller
     public function updateAuthorProfile(Request $request)
     {
         $user = auth()->user();
-        
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'phone' => 'nullable|string|max:20',
             'bio' => 'nullable|string|max:1000',
+            'image_profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        $user->update($request->all());
-        
+        $updateData = $request->all();
+
+        // Handle image upload
+        if ($request->hasFile('image_profile')) {
+            $image = $request->file('image_profile');
+            
+            // Delete old image if exists
+            if ($user->image_profile && file_exists(public_path('storage/' . $user->image_profile))) {
+                unlink(public_path('storage/' . $user->image_profile));
+            }
+
+            // Upload new image
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('storage/authors'), $imageName);
+            $updateData['image_profile'] = 'authors/' . $imageName;
+        }
+
+        $user->update($updateData);
+
         return redirect()->route('author.profile')->with('success', 'Profile updated successfully.');
     }
 
@@ -3624,7 +3819,7 @@ class AdminController extends Controller
         // Get system logs from storage/logs directory
         $logFiles = [];
         $logDirectory = storage_path('logs');
-        
+
         if (is_dir($logDirectory)) {
             $files = glob($logDirectory . '/*.log');
             foreach ($files as $file) {
@@ -3636,19 +3831,19 @@ class AdminController extends Controller
                 ];
             }
         }
-        
+
         // Get recent log entries
         $recentLogs = $this->getRecentLogEntries();
-        
+
         // Get system statistics
         $systemStats = $this->getSystemLogStats();
-        
+
         // Get error logs
         $errorLogs = $this->getErrorLogs();
-        
+
         // Get access logs
         $accessLogs = $this->getAccessLogs();
-        
+
         return view('admin.logs', compact(
             'logFiles',
             'recentLogs',
@@ -3657,7 +3852,7 @@ class AdminController extends Controller
             'accessLogs'
         ));
     }
-    
+
     /**
      * Get recent log entries from Laravel log file
      */
@@ -3665,11 +3860,11 @@ class AdminController extends Controller
     {
         $logFile = storage_path('logs/laravel.log');
         $entries = [];
-        
+
         if (file_exists($logFile)) {
             $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
             $lines = array_reverse(array_slice($lines, -100)); // Get last 100 lines
-            
+
             foreach ($lines as $line) {
                 if (preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\].*?(\w+)\.(.*?):\s*(.*)/', $line, $matches)) {
                     $entries[] = [
@@ -3682,10 +3877,10 @@ class AdminController extends Controller
                 }
             }
         }
-        
+
         return collect($entries);
     }
-    
+
     /**
      * Get system log statistics
      */
@@ -3700,12 +3895,12 @@ class AdminController extends Controller
             'debug_count' => 0,
             'last_updated' => null
         ];
-        
+
         if (file_exists($logFile)) {
             $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
             $stats['total_entries'] = count($lines);
             $stats['last_updated'] = filemtime($logFile);
-            
+
             foreach ($lines as $line) {
                 if (strpos($line, '.ERROR') !== false) {
                     $stats['error_count']++;
@@ -3718,10 +3913,10 @@ class AdminController extends Controller
                 }
             }
         }
-        
+
         return (object) $stats;
     }
-    
+
     /**
      * Get error logs
      */
@@ -3729,11 +3924,11 @@ class AdminController extends Controller
     {
         $logFile = storage_path('logs/laravel.log');
         $errors = [];
-        
+
         if (file_exists($logFile)) {
             $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
             $lines = array_reverse(array_slice($lines, -50)); // Get last 50 lines
-            
+
             foreach ($lines as $line) {
                 if (strpos($line, '.ERROR') !== false) {
                     if (preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\].*?(\w+)\.(.*?):\s*(.*)/', $line, $matches)) {
@@ -3748,10 +3943,10 @@ class AdminController extends Controller
                 }
             }
         }
-        
+
         return collect($errors);
     }
-    
+
     /**
      * Get access logs (simulated from database)
      */
@@ -3760,7 +3955,7 @@ class AdminController extends Controller
         // In a real application, you might have a separate access log table
         // For now, we'll simulate with recent user activity
         $accessLogs = [];
-        
+
         try {
             $recentUsers = \App\Models\User::latest()->take(10)->get();
             foreach ($recentUsers as $user) {
@@ -3776,7 +3971,7 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             // If database is not available, return empty array
         }
-        
+
         return collect($accessLogs);
     }
 
@@ -3796,7 +3991,7 @@ class AdminController extends Controller
             'favorites' => \App\Models\Favorite::with(['book', 'user'])->get(),
             'authors' => \DB::table('authorse')->get(),
         ];
-        
+
         return view('admin.show-all-data', compact('data'));
     }
 
@@ -3806,7 +4001,7 @@ class AdminController extends Controller
     public function authorCategories()
     {
         $user = auth()->user();
-        
+
         // Get ALL categories from the database with book counts
         $categories = \App\Models\Category::withCount('books')
             ->with(['books' => function($query) use ($user) {
@@ -3849,7 +4044,7 @@ class AdminController extends Controller
     public function authorTags()
     {
         $user = auth()->user();
-        
+
         // Get tags used by author's books
         $tags = \App\Models\Tag::whereHas('books', function($query) use ($user) {
                 $query->where('author_id', $user->id);

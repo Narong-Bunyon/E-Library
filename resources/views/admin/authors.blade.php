@@ -133,7 +133,8 @@
                             <th>
                                 <input type="checkbox" class="form-check-input" id="selectAll">
                             </th>
-                            <th>Author</th>
+                            <th>Profile Image</th>
+                            <th>Author Name</th>
                             <th>Email</th>
                             <th>Bio</th>
                             <th>Books</th>
@@ -149,20 +150,29 @@
                                 <input type="checkbox" class="form-check-input author-checkbox" value="{{ $author->id }}">
                             </td>
                             <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="author-avatar me-3">
-                                        {{ strtoupper(substr($author->name, 0, 1)) }}
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold">{{ $author->name }}</div>
-                                        <small class="text-muted">ID: #{{ $author->id }}</small>
-                                    </div>
+                                <div class="text-center">
+                                    @if($author->image_profile)
+                                        <img src="{{ $author->profile_image_url }}" alt="{{ $author->name }}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;" title="{{ $author->name }}">
+                                   @else
+                                        <div   title="{{ $author->name }}" style="margin-left:43px;">
+                                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; line-height: 50px;">
+                                                <i class="fas fa-user text-muted" style="font-size: 18px;"></i>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <div class="fw-semibold">{{ $author->name }}</div>
+                                    <small class="text-muted">ID: #{{ $author->id }}</small>
                                 </div>
                             </td>
                             <td>{{ $author->email }}</td>
                             <td>
                                 <div class="bio-info">
-                                    <small class="text-muted">{{ Str::limit($author->author_bio ?? 'No bio', 50) }}</small>
+                                    <small class="text-muted">{{ Str::limit($author->bio ?? 'No bio', 50) }}</small>
                                 </div>
                             </td>
                             <td>
@@ -196,7 +206,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <i class="fas fa-user-pen fa-3x text-muted mb-3"></i>
                                 <p class="text-muted mb-0">No authors found</p>
                                 <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#createAuthorModal">
@@ -218,8 +228,22 @@
             <div class="text-muted">
                 Showing {{ $authors->firstItem() }} to {{ $authors->lastItem() }} of {{ $authors->total() }} authors
             </div>
-            <div>
-                {{ $authors->links() }}
+            <div class="d-flex gap-2 align-items-center">
+                @if ($authors->onFirstPage())
+                    <button class="btn btn-outline-secondary" disabled>Previous</button>
+                @else
+                    <a href="{{ $authors->previousPageUrl() }}" class="btn btn-outline-primary">Previous</a>
+                @endif
+                
+                <span class="text-muted">
+                    Page {{ $authors->currentPage() }} of {{ $authors->lastPage() }}
+                </span>
+                
+                @if ($authors->hasMorePages())
+                    <a href="{{ $authors->nextPageUrl() }}" class="btn btn-outline-primary">Next</a>
+                @else
+                    <button class="btn btn-outline-secondary" disabled>Next</button>
+                @endif
             </div>
         </div>
     @endif
@@ -240,53 +264,70 @@
                 @csrf
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Name *</label>
+                                        <input type="text" class="form-control" name="name" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Email *</label>
+                                        <input type="email" class="form-control" name="email" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Password *</label>
+                                        <input type="password" class="form-control" name="password" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Confirm Password *</label>
+                                        <input type="password" class="form-control" name="password_confirmation" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" name="phone">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" name="status">
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="mb-3">
-                                <label class="form-label">Name *</label>
-                                <input type="text" class="form-control" name="name" required>
+                                <label class="form-label">Bio</label>
+                                <textarea class="form-control" name="bio" rows="3"></textarea>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
-                                <label class="form-label">Email *</label>
-                                <input type="email" class="form-control" name="email" required>
+                                <label class="form-label">Profile Image</label>
+                                <input type="file" class="form-control" name="profile_image" id="createProfileImage" accept="image/*">
+                                <div class="mt-3 text-center">
+                                    <img id="createProfilePreview" src="#" alt="Profile Preview" class="img-fluid rounded-circle" style="max-width: 150px; max-height: 150px; display: none; object-fit: cover;">
+                                    <div id="createProfilePlaceholder" class="profile-image-placeholder">
+                                        <i class="fas fa-user fa-3x text-muted"></i>
+                                        <p class="text-muted small mb-0">No image selected</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Password *</label>
-                                <input type="password" class="form-control" name="password" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Confirm Password *</label>
-                                <input type="password" class="form-control" name="password_confirmation" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Phone</label>
-                                <input type="tel" class="form-control" name="phone">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" name="status">
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Bio</label>
-                        <textarea class="form-control" name="bio" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -318,53 +359,71 @@
                 <input type="hidden" name="id" id="editAuthorId">
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Name *</label>
+                                        <input type="text" class="form-control" name="name" id="editName" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Email *</label>
+                                        <input type="email" class="form-control" name="email" id="editEmail" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Password</label>
+                                        <input type="password" class="form-control" name="password" id="editPassword" placeholder="Leave blank to keep current">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Confirm Password</label>
+                                        <input type="password" class="form-control" name="password_confirmation" id="editPasswordConfirmation" placeholder="Leave blank to keep current">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" name="phone" id="editPhone">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" name="status" id="editStatus">
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="mb-3">
-                                <label class="form-label">Name *</label>
-                                <input type="text" class="form-control" name="name" id="editName" required>
+                                <label class="form-label">Bio</label>
+                                <textarea class="form-control" name="bio" id="editBio" rows="3"></textarea>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
-                                <label class="form-label">Email *</label>
-                                <input type="email" class="form-control" name="email" id="editEmail" required>
+                                <label class="form-label">Profile Image</label>
+                                <input type="file" class="form-control" name="profile_image" id="editProfileImage" accept="image/*">
+                                <div class="mt-3 text-center">
+                                    <img id="editProfilePreview" src="#" alt="Profile Preview" class="img-fluid rounded-circle" style="max-width: 150px; max-height: 150px; display: none; object-fit: cover;">
+                                    <div id="editProfilePlaceholder" class="profile-image-placeholder">
+                                        <i class="fas fa-user fa-3x text-muted"></i>
+                                        <p class="text-muted small mb-0">No image selected</p>
+                                    </div>
+                                    <p class="text-muted small mt-2 mb-0">Leave empty to keep current image</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Password</label>
-                                <input type="password" class="form-control" name="password" id="editPassword" placeholder="Leave blank to keep current">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Confirm Password</label>
-                                <input type="password" class="form-control" name="password_confirmation" id="editPasswordConfirmation" placeholder="Leave blank to keep current">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Phone</label>
-                                <input type="tel" class="form-control" name="phone" id="editPhone">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" name="status" id="editStatus">
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Bio</label>
-                        <textarea class="form-control" name="bio" id="editBio" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -435,40 +494,106 @@
 
 @push('styles')
 <style>
+/* Author Table Enhancements */
+.author-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e9ecef;
+}
+
+.author-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.author-details h6 {
+    margin-bottom: 2px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.author-details small {
+    color: #6c757d;
+}
+
+/* Profile Image Placeholder */
+.profile-image-placeholder {
+    width: 150px;
+    height: 150px;
+    border: 2px dashed #dee2e6;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.profile-image-placeholder:hover {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+}
+
+/* Modal enhancements */
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Table hover effects */
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Alert enhancements */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
 /* Statistics Cards - Clean Modern Design */
 .stats-card {
     background: transparent !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-}
-
-/* Author Avatar Styles */
-.author-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.author-avatar-large {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 28px;
-    margin: 0 auto;
 }
 
 /* Status Badge Styles */
@@ -648,7 +773,15 @@ function viewAuthor(id) {
                 <div class="row">
                     <div class="col-md-4 text-center">
                         <div class="author-avatar-large mb-3">
-                            ${data.name ? data.name.charAt(0).toUpperCase() : 'A'}
+                            ${data.image_profile && data.image_profile !== '' ? 
+                                `<img src="${data.image_profile.startsWith('http') ? data.image_profile : '/storage/' + data.image_profile}" alt="${data.name || 'Author'}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); border-radius: 50%; display: none; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 3rem; box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);">
+                                    ${data.name ? data.name.charAt(0).toUpperCase() : 'A'}
+                                </div>` : 
+                                `<div style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 3rem; box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);">
+                                    ${data.name ? data.name.charAt(0).toUpperCase() : 'A'}
+                                </div>`
+                            }
                         </div>
                         <h5 class="mb-1">${data.name || 'N/A'}</h5>
                         <span class="badge bg-${data.status === 'active' ? 'success' : 'secondary'}">
@@ -703,17 +836,36 @@ function viewAuthor(id) {
 
 // Edit author
 function editAuthor(id) {
-    // Load author data for editing
+    console.log('Edit author ID:', id);
+    
     fetch(`/admin/authors/${id}/edit`)
         .then(response => response.json())
         .then(data => {
-            // Populate edit form
+            console.log('Author data loaded:', data);
+            
+            // Populate form fields
             document.getElementById('editAuthorId').value = data.id;
             document.getElementById('editName').value = data.name || '';
             document.getElementById('editEmail').value = data.email || '';
             document.getElementById('editPhone').value = data.phone || '';
             document.getElementById('editBio').value = data.author_bio || '';
             document.getElementById('editStatus').value = data.status || 'active';
+            
+            // Handle profile image
+            const editProfilePreview = document.getElementById('editProfilePreview');
+            const editProfilePlaceholder = document.getElementById('editProfilePlaceholder');
+            
+            if (data.profile_image) {
+                // Show existing profile image
+                const imagePath = data.profile_image.startsWith('http') ? data.profile_image : `/storage/${data.profile_image}`;
+                editProfilePreview.src = imagePath;
+                editProfilePreview.style.display = 'block';
+                editProfilePlaceholder.style.display = 'none';
+            } else {
+                // Show placeholder
+                editProfilePreview.style.display = 'none';
+                editProfilePlaceholder.style.display = 'flex';
+            }
             
             // Show edit modal
             new bootstrap.Modal(document.getElementById('editAuthorModal')).show();

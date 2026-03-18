@@ -137,10 +137,13 @@
                         </div>
                         <div class="flex-grow-1">
                             <h6 class="mb-1">{{ $book->title }}</h6>
-                            <p class="text-muted mb-0 small">{{ $book->author_name ?? 'Unknown Author' }}</p>
+                            <p class="text-muted mb-0 small">{{ $book->author ? $book->author->name : 'Unknown Author' }}</p>
+                            @if(request()->get('debug'))
+                                <small class="d-block text-muted">Author ID: {{ $book->author_id }}</small>
+                            @endif
                         </div>
                         <div class="text-end">
-                            <div class="badge bg-success mb-1">{{ $book->downloads ?? 0 }} downloads</div>
+                            <div class="badge bg-success mb-1">{{ $book->downloads_count ?? 0 }} downloads</div>
                             <div class="text-muted small">{{ $book->rating ?? '0.0' }} ⭐</div>
                         </div>
                     </div>

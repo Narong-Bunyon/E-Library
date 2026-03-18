@@ -169,9 +169,9 @@
                             <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
                             <h6>No books yet</h6>
                             <p class="text-muted">Start by creating your first book!</p>
-                            <a href="{{ route('author.books.create') }}" class="btn btn-primary">
+                            <!-- <a href="{{ route('author.books.create') }}" class="btn btn-primary">
                                 <i class="fas fa-plus me-2"></i>Create Book
-                            </a>
+                            </a> -->
                         </div>
                     @endif
                 </div>

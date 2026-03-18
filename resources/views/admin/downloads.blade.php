@@ -15,11 +15,17 @@
                         <i class="fas fa-download"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 class="stat-value">8,942</h3>
+                        <h3 class="stat-value">{{ number_format($totalDownloads) }}</h3>
                         <p class="stat-label mb-1">Total Downloads</p>
-                        <small class="stat-change positive">
-                            <i class="fas fa-arrow-up"></i> +24% this month
-                        </small>
+                        @if($monthlyGrowth > 0)
+                            <small class="stat-change positive">
+                                <i class="fas fa-arrow-up"></i> +{{ round($monthlyGrowth, 1) }}% this month
+                            </small>
+                        @else
+                            <small class="text-muted">
+                                <i class="fas fa-minus"></i> No change this month
+                            </small>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -32,7 +38,7 @@
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 class="stat-value">234</h3>
+                        <h3 class="stat-value">{{ number_format($uniqueUsersThisMonth) }}</h3>
                         <p class="stat-label mb-1">Unique Users</p>
                         <small class="text-muted">Downloaded this month</small>
                     </div>
@@ -44,12 +50,12 @@
             <div class="card stat-card warning">
                 <div class="card-body d-flex align-items-center">
                     <div class="stat-icon bg-warning text-white">
-                        <i class="fas fa-file-alt"></i>
+                        <i class="fas fa-check-circle"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 class="stat-value">156</h3>
-                        <p class="stat-label mb-1">Books Downloaded</p>
-                        <small class="text-muted">Unique titles</small>
+                        <h3 class="stat-value">{{ number_format($completedDownloads) }}</h3>
+                        <p class="stat-label mb-1">Completed</p>
+                        <small class="text-muted">Successfully downloaded</small>
                     </div>
                 </div>
             </div>
@@ -59,14 +65,12 @@
             <div class="card stat-card info">
                 <div class="card-body d-flex align-items-center">
                     <div class="stat-icon bg-info text-white">
-                        <i class="fas fa-hdd"></i>
+                        <i class="fas fa-calendar"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 class="stat-value">2.3GB</h3>
-                        <p class="stat-label mb-1">Bandwidth Used</p>
-                        <small class="stat-change positive">
-                            <i class="fas fa-arrow-up"></i> +18% this month
-                        </small>
+                        <h3 class="stat-value">{{ number_format($downloadsThisMonth) }}</h3>
+                        <p class="stat-label mb-1">This Month</p>
+                        <small class="text-muted">Total downloads</small>
                     </div>
                 </div>
             </div>

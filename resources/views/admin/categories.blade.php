@@ -182,6 +182,11 @@
         </div>
     </div>
 
+    <!-- Pagination -->
+    <div class="d-flex justify-content-center mt-4">
+        {{ $categories->links('simple-pagination') }}
+    </div>
+
     <!-- Categories Table View -->
     <div class="card" id="tableView" style="display: none;">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -274,7 +279,7 @@
                 <h5 class="modal-title">Create New Category</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ route('admin.categories.store') }}" method="POST" id="createCategoryForm">
+            <form action="{{ route('admin.categories.store') }}" method="POST" id="createCategoryForm" onsubmit="storeCategory(event)">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
@@ -315,6 +320,11 @@
                                 </label>
                             </div>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cover Image</label>
+                        <input type="file" class="form-control" name="image_cover" accept="image/*">
+                        <div class="form-text">Optional: Upload a cover image for this category</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -378,6 +388,12 @@
                                 </label>
                             </div>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cover Image</label>
+                        <input type="file" class="form-control" name="image_cover" id="editCategoryImage" accept="image/*">
+                        <div class="form-text">Optional: Upload a cover image for this category</div>
+                        <div id="currentImagePreview" class="mt-2"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -596,21 +612,12 @@ document.getElementById('viewMode').addEventListener('change', function() {
 
 // Search functionality
 document.getElementById('searchInput').addEventListener('input', function() {
-    const search = this.value.toLowerCase();
-    const categoryCards = document.querySelectorAll('#categoriesGrid .category-card');
-    
-    categoryCards.forEach(card => {
-        const title = card.querySelector('.category-title').textContent.toLowerCase();
-        card.style.display = title.includes(search) ? '' : 'none';
-    });
+    loadCategories(1); // Reset to page 1 when searching
 });
 
 // Sort functionality
 document.getElementById('sortBy').addEventListener('change', function() {
-    const sortBy = this.value;
-    const url = new URL(window.location);
-    url.searchParams.set('sort', sortBy);
-    window.location.href = url.toString();
+    loadCategories(1); // Reset to page 1 when sorting
 });
 
 // Select all functionality
@@ -690,19 +697,42 @@ function editCategory(id) {
     fetch(`/admin/categories/${id}/edit`)
         .then(response => response.json())
         .then(data => {
-            document.getElementById('editCategoryId').value = data.id;
-            document.getElementById('editCategoryName').value = data.name;
-            document.getElementById('editCategoryDescription').value = data.description || '';
+            // The controller returns the category data directly, not nested under 'category'
+            const category = data.category || data;
+            
+            document.getElementById('editCategoryId').value = category.id;
+            document.getElementById('editCategoryName').value = category.name;
+            document.getElementById('editCategoryDescription').value = category.description || '';
             
             // Set the color radio button
-            const color = data.color || 'primary';
-            document.getElementById(`editColor${color.charAt(0).toUpperCase() + color.slice(1)}`).checked = true;
+            const color = category.color || 'primary';
+            const colorRadio = document.getElementById(`editColor${color.charAt(0).toUpperCase() + color.slice(1)}`);
+            if (colorRadio) {
+                colorRadio.checked = true;
+            }
+            
+            // Show current image if exists
+            const imagePreview = document.getElementById('currentImagePreview');
+            if (category.image_cover) {
+                imagePreview.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="/storage/${category.image_cover}" alt="Current image" style="max-width: 100px; max-height: 60px; object-fit: cover;" class="border rounded">
+                        <small class="text-muted">Current image</small>
+                    </div>
+                `;
+            } else {
+                imagePreview.innerHTML = '<small class="text-muted">No image uploaded</small>';
+            }
             
             // Set the correct form action
             const form = document.getElementById('editCategoryForm');
             form.action = `/admin/categories/${id}`;
             
             new bootstrap.Modal(document.getElementById('editCategoryModal')).show();
+        })
+        .catch(error => {
+            console.error('Error fetching category:', error);
+            alert('Error loading category data. Please try again.');
         });
 }
 
@@ -712,35 +742,150 @@ function updateCategory(event) {
     const form = document.getElementById('editCategoryForm');
     const formData = new FormData(form);
     
+    // Add the _method field for PUT request
+    formData.append('_method', 'PUT');
+    
+    // Debug: Log form data
+    console.log('Form action:', form.action);
+    console.log('FormData contents:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
+    
     fetch(form.action, {
         method: 'POST',
         body: formData,
         headers: {
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
         }
     })
     .then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;
-            return;
+        console.log('Response status:', response.status);
+        console.log('Response headers:', [...response.headers.entries()]);
+        
+        if (!response.ok) {
+            // Try to get error details from response
+            return response.text().then(text => {
+                console.error('Error response:', text);
+                throw new Error(`HTTP ${response.status}: ${text || 'Network response was not ok'}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        
+        if (data && data.success) {
+            // Close modal and refresh data instead of reloading page
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editCategoryModal'));
+            modal.hide();
+            
+            // Refresh the current page of categories
+            const currentPage = document.querySelector('.pagination .page-item.active .page-link')?.textContent || '1';
+            loadCategories(currentPage);
+            
+            // Show success message
+            showToast('Category updated successfully!', 'success');
+        } else if (data && data.errors) {
+            // Handle validation errors
+            console.error('Validation errors:', data.errors);
+            let errorMessage = 'Please fix the following errors:\n';
+            Object.values(data.errors).forEach(error => {
+                errorMessage += `- ${error[0]}\n`;
+            });
+            alert(errorMessage);
+        } else {
+            throw new Error(data?.message || 'Failed to update category');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the category: ' + error.message);
+    });
+}
+
+// Helper function to show toast notifications
+function showToast(message, type = 'info') {
+    // Create toast element if it doesn't exist
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show`;
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Store new category
+function storeCategory(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('createCategoryForm');
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Error response:', text);
+                throw new Error(`HTTP ${response.status}: ${text || 'Network response was not ok'}`);
+            });
         }
         return response.json();
     })
     .then(data => {
         if (data && data.success) {
-            // Close modal and reload page to show updated data
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editCategoryModal'));
+            // Close modal and refresh data
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createCategoryModal'));
             modal.hide();
-            location.reload();
+            
+            // Reset form
+            form.reset();
+            
+            // Refresh the first page to show new category
+            loadCategories(1);
+            
+            // Show success message
+            showToast('Category created successfully!', 'success');
         } else if (data && data.errors) {
             // Handle validation errors
             console.error('Validation errors:', data.errors);
-            alert('Please fix the errors in the form.');
+            let errorMessage = 'Please fix the following errors:\n';
+            Object.values(data.errors).forEach(error => {
+                errorMessage += `- ${error[0]}\n`;
+            });
+            alert(errorMessage);
+        } else {
+            throw new Error(data?.message || 'Failed to create category');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while updating the category.');
+        alert('An error occurred while creating the category: ' + error.message);
     });
 }
 
@@ -780,18 +925,29 @@ function deleteCategory(id) {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                location.reload();
+                showToast('Category deleted successfully!', 'success');
+                // Refresh the current page of categories
+                const currentPage = document.querySelector('.pagination .page-item.active .page-link')?.textContent || '1';
+                loadCategories(currentPage);
             } else {
-                alert('Error deleting category: ' + data.message);
+                throw new Error(data.message || 'Failed to delete category');
             }
         })
         .catch(error => {
+            console.error('Error:', error);
             alert('Error deleting category: ' + error.message);
         });
     }
@@ -807,5 +963,191 @@ function exportCategories() {
     url.searchParams.set('export', 'csv');
     window.location.href = url.toString();
 }
+
+// AJAX Pagination
+function loadCategories(page = 1) {
+    const viewMode = document.getElementById('viewMode').value;
+    const search = document.getElementById('searchInput').value;
+    const sortBy = document.getElementById('sortBy').value;
+    
+    // Build URL with parameters
+    const url = new URL(window.location.origin + '/admin/categories');
+    url.searchParams.set('page', page);
+    if (search) url.searchParams.set('search', search);
+    if (sortBy) url.searchParams.set('sort', sortBy);
+    
+    // Show loading state
+    const gridView = document.getElementById('categoriesGrid');
+    const tableView = document.querySelector('#tableView tbody');
+    
+    if (viewMode === 'table') {
+        tableView.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+    } else {
+        gridView.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    }
+    
+    // Fetch categories data
+    fetch(url.toString(), {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateCategoriesView(data.categories, data.pagination, viewMode);
+            updatePaginationLinks(data.pagination);
+        } else {
+            throw new Error(data.message || 'Failed to load categories');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading categories:', error);
+        // Show error message
+        if (viewMode === 'table') {
+            tableView.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Error loading categories. Please try again.</td></tr>';
+        } else {
+            gridView.innerHTML = '<div class="col-12 text-center py-5 text-danger">Error loading categories. Please try again.</div>';
+        }
+    });
+}
+
+function updateCategoriesView(categories, pagination, viewMode) {
+    const gridView = document.getElementById('categoriesGrid');
+    const tableView = document.querySelector('#tableView tbody');
+    
+    if (viewMode === 'table') {
+        // Update table view
+        let tableHtml = '';
+        if (categories.length === 0) {
+            tableHtml = `
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No categories found. Create your first category!</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+                            <i class="fas fa-plus me-1"></i>
+                            Create First Category
+                        </button>
+                    </td>
+                </tr>
+            `;
+        } else {
+            categories.forEach(category => {
+                tableHtml += `
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="form-check-input category-checkbox" value="${category.id}" onchange="updateBulkDeleteButton()">
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="category-icon-sm me-2">
+                                    <i class="fas fa-folder text-primary"></i>
+                                </div>
+                                <span class="fw-semibold">${category.name}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">${category.books_count || 0}</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">${category.description || 'No description'}</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">${category.created_at ? new Date(category.created_at).toLocaleDateString() : 'N/A'}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editCategory(${category.id})" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-info btn-sm" onclick="viewCategory(${category.id})" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteCategory(${category.id})" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        tableView.innerHTML = tableHtml;
+    } else {
+        // Update grid view
+        let gridHtml = '';
+        if (categories.length === 0) {
+            gridHtml = `
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-0">No categories found. Create your first category!</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+                        <i class="fas fa-plus me-1"></i>
+                        Create First Category
+                    </button>
+                </div>
+            `;
+        } else {
+            categories.forEach(category => {
+                gridHtml += `
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="category-card">
+                            <div class="category-checkbox">
+                                <input type="checkbox" class="form-check-input category-checkbox" value="${category.id}" onchange="updateBulkDeleteButton()">
+                            </div>
+                            <div class="category-icon bg-primary">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="category-content">
+                                <h6 class="category-title">${category.name}</h6>
+                                <p class="category-stats">${category.books_count || 0} books</p>
+                                <div class="category-actions">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editCategory(${category.id})" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewCategory(${category.id})" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${category.id})" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        gridView.innerHTML = gridHtml;
+    }
+}
+
+function updatePaginationLinks(pagination) {
+    // Update pagination container
+    const paginationContainer = document.querySelector('.d-flex.justify-content-center.mt-4');
+    if (paginationContainer && pagination.html) {
+        paginationContainer.innerHTML = pagination.html;
+        // Re-attach event listeners to new pagination links
+        attachPaginationListeners();
+    }
+}
+
+function attachPaginationListeners() {
+    // Attach click event listeners to pagination links
+    document.querySelectorAll('.pagination a[data-page]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = this.getAttribute('data-page');
+            loadCategories(page);
+        });
+    });
+}
+
+// Initialize pagination event listeners when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    attachPaginationListeners();
+});
 </script>
 @endpush

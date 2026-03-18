@@ -104,9 +104,9 @@
                     <i class="fas fa-tags fa-3x text-muted mb-3"></i>
                     <h6>No tags yet</h6>
                     <p class="text-muted">Start by creating your first tag!</p>
-                    <button class="btn btn-primary" onclick="showCreateTagModal()">
+                    <!-- <button class="btn btn-primary" onclick="showCreateTagModal()">
                         <i class="fas fa-plus me-2"></i>Create Tag
-                    </button>
+                    </button> -->
                 </div>
             @endforelse
         </div>

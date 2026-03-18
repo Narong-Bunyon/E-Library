@@ -211,9 +211,30 @@
         </div>
         
         <!-- Pagination -->
-        @if(isset($activities) && method_exists($activities, 'links'))
+        @if(isset($activities) && method_exists($activities, 'hasPages'))
         <div class="card-footer bg-white border-top">
-            {{ $activities->links() }}
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    Showing {{ $activities->firstItem() }} to {{ $activities->lastItem() }} of {{ $activities->total() }} activities
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    @if ($activities->onFirstPage())
+                        <button class="btn btn-outline-secondary" disabled>Previous</button>
+                    @else
+                        <a href="{{ $activities->previousPageUrl() }}" class="btn btn-outline-primary">Previous</a>
+                    @endif
+                    
+                    <span class="text-muted">
+                        Page {{ $activities->currentPage() }} of {{ $activities->lastPage() }}
+                    </span>
+                    
+                    @if ($activities->hasMorePages())
+                        <a href="{{ $activities->nextPageUrl() }}" class="btn btn-outline-primary">Next</a>
+                    @else
+                        <button class="btn btn-outline-secondary" disabled>Next</button>
+                    @endif
+                </div>
+            </div>
         </div>
         @endif
     </div>

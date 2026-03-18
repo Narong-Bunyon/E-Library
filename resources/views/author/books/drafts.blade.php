@@ -222,9 +222,9 @@
                                 <h5>No Draft Books</h5>
                                 <p>You don't have any draft books. All your books are published!</p>
                                 <div class="empty-actions">
-                                    <a href="{{ route('author.books.create') }}" class="btn btn-primary">
+                                    <!-- <a href="{{ route('author.books.create') }}" class="btn btn-primary">
                                         <i class="fas fa-plus me-2"></i>Create New Book
-                                    </a>
+                                    </a> -->
                                     <a href="{{ route('author.books.published') }}" class="btn btn-outline-success">
                                         <i class="fas fa-check-circle me-2"></i>View Published Books
                                     </a>
@@ -317,11 +317,9 @@
                                     <button type="button" class="btn btn-outline-primary btn-sm" onclick="editFromModal()">
                                         <i class="fas fa-edit me-1"></i>Edit
                                     </button>
-                                    @if($book->file_path)
-                                    <a id="modalDownloadLink" href="#" class="btn btn-primary btn-sm" target="_blank">
+                                    <a id="modalDownloadLink" href="#" class="btn btn-primary btn-sm" target="_blank" style="display: none;">
                                         <i class="fas fa-download me-1"></i>Download
                                     </a>
-                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -409,7 +407,7 @@
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                @include('author.books.partials.create-form')
+                @include('author.books.partials.create-book-form')
             </div>
         </div>
     </div>
@@ -489,7 +487,6 @@
     @endif
 </div>
 
-@include('author.books.partials.form-scripts')
 
 <script>
 // Additional functions for drafts-specific functionality

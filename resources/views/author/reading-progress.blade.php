@@ -157,19 +157,136 @@
             </div>
         </div>
     </div>
+    
+    <!-- View Progress Modal -->
+    <div class="modal fade" id="viewProgressModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reading Progress Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="progressDetails">
+                    <!-- Progress details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+@push('scripts')
 <script>
 function viewProgress(progressId) {
-    // View full progress details
+    fetch(`/author/reading-progress/${progressId}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const progress = data.progress;
+            const details = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Reader Information</h6>
+                        <p><strong>Name:</strong> ${progress.user?.name || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${progress.user?.email || 'N/A'}</p>
+                        <p><strong>Phone:</strong> ${progress.user?.phone || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Book Information</h6>
+                        <p><strong>Title:</strong> ${progress.book?.title || 'N/A'}</p>
+                        <p><strong>Author:</strong> ${progress.book?.author?.name || 'N/A'}</p>
+                        <p><strong>Pages:</strong> ${progress.book?.pages || 'N/A'}</p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6>Progress Details</h6>
+                        <p><strong>Current Page:</strong> ${progress.current_page || 'N/A'}</p>
+                        <p><strong>Total Pages:</strong> ${progress.book?.pages || 'N/A'}</p>
+                        <p><strong>Progress:</strong> ${progress.progress_percentage || 0}%</p>
+                        <p><strong>Status:</strong> <span class="badge ${progress.progress_percentage >= 100 ? 'bg-success' : (progress.progress_percentage >= 50 ? 'bg-warning' : 'bg-danger')}">${progress.progress_percentage >= 100 ? 'Completed' : (progress.progress_percentage >= 50 ? 'In Progress' : 'Just Started')}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Timeline</h6>
+                        <p><strong>Started:</strong> ${progress.created_at ? new Date(progress.created_at).toLocaleDateString() : 'N/A'}</p>
+                        <p><strong>Last Updated:</strong> ${progress.updated_at ? new Date(progress.updated_at).toLocaleDateString() : 'N/A'}</p>
+                        <p><strong>Completed:</strong> ${progress.completed_at ? new Date(progress.completed_at).toLocaleDateString() : 'Not completed'}</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('progressDetails').innerHTML = details;
+            new bootstrap.Modal(document.getElementById('viewProgressModal')).show();
+        } else {
+            alert('Error loading progress details');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading progress details: ' + error.message);
+    });
 }
 
 function sendMessage(userId, bookId) {
-    // Send message to reader
+    const message = prompt('Enter your message to the reader:');
+    if (message && message.trim()) {
+        // Here you would implement an actual messaging system
+        alert(`Message sent to user ${userId}: ${message}`);
+    }
 }
 
 function exportProgress() {
-    // Export reading progress data
+    const filter = document.getElementById('progressFilter').value;
+    const bookFilter = document.getElementById('bookFilter').value;
+    
+    let url = '/author/reading-progress/export';
+    const params = new URLSearchParams();
+    
+    if (filter) params.append('filter', filter);
+    if (bookFilter) params.append('book', bookFilter);
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    window.location.href = url;
 }
+
+// Filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const progressFilter = document.getElementById('progressFilter');
+    const bookFilter = document.getElementById('bookFilter');
+    
+    if (progressFilter) {
+        progressFilter.addEventListener('change', function() {
+            const url = new URL(window.location);
+            if (this.value) {
+                url.searchParams.set('filter', this.value);
+            } else {
+                url.searchParams.delete('filter');
+            }
+            window.location.href = url.toString();
+        });
+    }
+    
+    if (bookFilter) {
+        bookFilter.addEventListener('change', function() {
+            const url = new URL(window.location);
+            if (this.value) {
+                url.searchParams.set('book', this.value);
+            } else {
+                url.searchParams.delete('book');
+            }
+            window.location.href = url.toString();
+        });
+    }
+});
 </script>
+@endpush
 @endsection

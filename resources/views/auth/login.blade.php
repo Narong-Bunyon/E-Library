@@ -2,6 +2,48 @@
 
 @section('title', 'Login - E-Library')
 
+@push('styles')
+<style>
+.form-label i {
+    margin-right: 0.5rem;
+    color: #6366f1;
+    font-size: 0.9rem;
+}
+
+.input-group .input-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-right: none;
+    border-radius: 0.375rem 0 0 0.375rem;
+}
+
+.input-group .input-icon i {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.input-group .form-control {
+    border-left: none;
+    border-radius: 0 0.375rem 0.375rem 0;
+}
+
+.input-group .form-control:focus {
+    border-left: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+}
+
+.invalid-feedback i {
+    margin-right: 0.25rem;
+    color: #dc2626;
+}
+</style>
+@endpush
+
 @section('content')
 <div class="auth-container">
     <div class="auth-background">
@@ -30,10 +72,12 @@
                 @csrf
                 
                 <div class="form-group">
-                    <label for="email" class="form-label">Email Address</label>
+                    <label for="email" class="form-label">
+                        <i class="fas fa-at me-2 text-primary"></i>Email Address
+                    </label>
                     <div class="input-group">
                         <div class="input-icon">
-                            <i class="fas fa-envelope"></i>
+                            <i class="fas fa-envelope text-muted"></i>
                         </div>
                         <input 
                             type="email" 
@@ -48,17 +92,19 @@
                     </div>
                     @error('email')
                         <div class="invalid-feedback">
-                            <i class="fas fa-exclamation-circle"></i>
+                            <i class="fas fa-exclamation-triangle text-danger"></i>
                             {{ $message }}
                         </div>
                     @enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
+                    <label for="password" class="form-label">
+                        <i class="fas fa-key me-2 text-primary"></i>Password
+                    </label>
                     <div class="input-group">
                         <div class="input-icon">
-                            <i class="fas fa-lock"></i>
+                            <i class="fas fa-shield-alt text-muted"></i>
                         </div>
                         <input 
                             type="password" 
@@ -68,13 +114,13 @@
                             placeholder="Enter your password"
                             required
                         >
-                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')" title="Toggle password visibility">
                             <i class="fas fa-eye" id="password-icon"></i>
                         </button>
                     </div>
                     @error('password')
                         <div class="invalid-feedback">
-                            <i class="fas fa-exclamation-circle"></i>
+                            <i class="fas fa-exclamation-triangle text-danger"></i>
                             {{ $message }}
                         </div>
                     @enderror

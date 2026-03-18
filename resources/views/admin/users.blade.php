@@ -40,7 +40,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-6 col-md-3 mb-3">
             <div class="stats-card">
                 <div class="stats-icon">
@@ -52,7 +52,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-6 col-md-3 mb-3">
             <div class="stats-card">
                 <div class="stats-icon">
@@ -64,7 +64,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-6 col-md-3 mb-3">
             <div class="stats-card">
                 <div class="stats-icon">
@@ -135,6 +135,7 @@
                             <th>
                                 <input type="checkbox" class="form-check-input" id="selectAll">
                             </th>
+                            <th>Profile Image</th>
                             <th>User</th>
                             <th>Contact</th>
                             <th>Role</th>
@@ -151,10 +152,20 @@
                                 <input type="checkbox" class="form-check-input user-checkbox" value="{{ $user->id }}">
                             </td>
                             <td>
+                                <div class="text-center">
+                                    @if($user->image_profile && !empty($user->image_profile))
+                                        <img src="{{ Str::startsWith($user->image_profile, ['http://', 'https://']) ? $user->image_profile : asset('storage/' . $user->image_profile) }}" alt="{{ $user->name }}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;" title="{{ $user->name }}">
+                                    @else
+                                        <div   title="{{ $user->name }}" style="margin-left:43px;">
+                                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; line-height: 50px;">
+                                                <i class="fas fa-user text-muted" style="font-size: 18px;"></i>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </td>
+                            <td>
                                 <div class="d-flex align-items-center">
-                                    <div class="user-avatar me-3">
-                                        {{ strtoupper(substr($user->name, 0, 1)) }}
-                                    </div>
                                     <div>
                                         <div class="fw-semibold text-dark">{{ $user->name }}</div>
                                         <small class="text-muted">ID: #{{ $user->id }}</small>
@@ -236,7 +247,7 @@
                         @endif
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center py-5">
+                            <td colspan="8" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="fas fa-users fa-4x mb-3"></i>
                                     <p class="mb-0">No users found</p>
@@ -259,8 +270,8 @@
         <div class="d-flex justify-content-between align-items-center mt-4" id="paginationContainer">
             <div class="pagination-info">
                 <i class="fas fa-info-circle me-2"></i>
-                Showing <span class="fw-semibold">{{ $users->firstItem() }}</span> to 
-                <span class="fw-semibold">{{ $users->lastItem() }}</span> of 
+                Showing <span class="fw-semibold">{{ $users->firstItem() }}</span> to
+                <span class="fw-semibold">{{ $users->lastItem() }}</span> of
                 <span class="fw-semibold">{{ $users->total() }}</span> users
             </div>
             <div class="pagination-wrapper">
@@ -292,7 +303,7 @@
                                     <span class="input-group-text">
                                         <i class="fas fa-user"></i>
                                     </span>
-                                    <input type="text" class="form-control" name="name" required 
+                                    <input type="text" class="form-control" name="name" required
                                            placeholder="Enter full name"
                                            pattern="[A-Za-z\s]{3,50}"
                                            title="Name should be 3-50 characters, letters only">
@@ -307,7 +318,7 @@
                                     <span class="input-group-text">
                                         <i class="fas fa-envelope"></i>
                                     </span>
-                                    <input type="email" class="form-control" name="email" required 
+                                    <input type="email" class="form-control" name="email" required
                                            placeholder="user@example.com">
                                 </div>
                                 <div class="form-text">This will be used for login</div>
@@ -322,7 +333,7 @@
                                     <span class="input-group-text">
                                         <i class="fas fa-lock"></i>
                                     </span>
-                                    <input type="password" class="form-control" name="password" required 
+                                    <input type="password" class="form-control" name="password" required
                                            id="password"
                                            placeholder="Enter strong password"
                                            minlength="8"
@@ -345,7 +356,7 @@
                                     <span class="input-group-text">
                                         <i class="fas fa-lock"></i>
                                     </span>
-                                    <input type="password" class="form-control" name="password_confirmation" required 
+                                    <input type="password" class="form-control" name="password_confirmation" required
                                            id="password_confirmation"
                                            placeholder="Confirm password"
                                            oninput="checkPasswordMatch()">
@@ -382,7 +393,7 @@
                                     <span class="input-group-text">
                                         <i class="fas fa-phone"></i>
                                     </span>
-                                    <input type="tel" class="form-control" name="phone" 
+                                    <input type="tel" class="form-control" name="phone"
                                            placeholder="+1 (555) 123-4567"
                                            pattern="[+]?[0-9\s\-\(\)]+"
                                            title="Enter a valid phone number">
@@ -397,11 +408,24 @@
                             <span class="input-group-text">
                                 <i class="fas fa-map-marker-alt"></i>
                             </span>
-                            <textarea class="form-control" name="address" rows="2" 
+                            <textarea class="form-control" name="address" rows="2"
                                       placeholder="Enter address (optional)"
                                       maxlength="200"></textarea>
                         </div>
                         <div class="form-text">Optional: User's address (max 200 characters)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Profile Image</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-image"></i>
+                            </span>
+                            <input type="file" class="form-control" name="image_profile" accept="image/*">
+                        </div>
+                        <div class="form-text">Optional: Upload profile image (JPG, PNG, GIF - Max 2MB)</div>
+                        <div class="mt-2">
+                            <img id="imagePreview" src="#" alt="Image preview" class="img-thumbnail" style="max-width: 100px; max-height: 100px; display: none;">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -499,17 +523,27 @@
 
 <!-- View User Modal -->
 <div class="modal fade" id="viewUserModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">User Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-circle me-2"></i>
+                    User Profile Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="userDetails">
+            <div class="modal-body p-0" id="userDetails">
                 <!-- User details will be loaded here -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Close
+                </button>
+                <button type="button" class="btn btn-primary" onclick="editUserFromView()">
+                    <i class="fas fa-edit me-1"></i>
+                    Edit User
+                </button>
             </div>
         </div>
     </div>
@@ -527,20 +561,52 @@ document.addEventListener('DOMContentLoaded', function() {
             loadUsers(url);
         }
     });
-    
+
     // Handle filter changes
     document.getElementById('searchInput')?.addEventListener('input', debounce(function() {
         loadUsers(window.location.href);
     }, 500));
-    
+
     document.getElementById('roleFilter')?.addEventListener('change', function() {
         loadUsers(window.location.href);
     });
-    
+
+    // Image preview functionality
+    document.querySelector('input[name="image_profile"]')?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('imagePreview');
+        
+        if (file) {
+            // Check file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('File size must be less than 2MB');
+                e.target.value = '';
+                return;
+            }
+            
+            // Check file type
+            if (!file.type.match('image.*')) {
+                alert('Please select an image file');
+                e.target.value = '';
+                return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            preview.style.display = 'none';
+        }
+    });
+
     document.getElementById('statusFilter')?.addEventListener('change', function() {
         loadUsers(window.location.href);
     });
-    
+
     document.getElementById('sortBy')?.addEventListener('change', function() {
         loadUsers(window.location.href);
     });
@@ -550,33 +616,33 @@ function loadUsers(url) {
     // Show loading state
     const tableContainer = document.getElementById('usersTableContainer');
     const paginationContainer = document.getElementById('paginationContainer');
-    
+
     if (tableContainer) {
         tableContainer.style.opacity = '0.5';
         tableContainer.style.pointerEvents = 'none';
     }
-    
+
     if (paginationContainer) {
         paginationContainer.style.opacity = '0.5';
         paginationContainer.style.pointerEvents = 'none';
     }
-    
+
     // Get current filter values
     const search = document.getElementById('searchInput')?.value || '';
     const role = document.getElementById('roleFilter')?.value || '';
     const status = document.getElementById('statusFilter')?.value || '';
     const sortBy = document.getElementById('sortBy')?.value || '';
-    
+
     // Build URL with parameters
     const urlObj = new URL(url);
     if (search) urlObj.searchParams.set('search', search);
     if (role) urlObj.searchParams.set('role', role);
     if (status) urlObj.searchParams.set('status', status);
     if (sortBy) urlObj.searchParams.set('sort', sortBy);
-    
+
     // Add AJAX parameter to indicate this is an AJAX request
     urlObj.searchParams.set('ajax', '1');
-    
+
     fetch(urlObj.toString(), {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -588,29 +654,29 @@ function loadUsers(url) {
         // Create a temporary DOM element to parse the response
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
-        
+
         // Extract the new table content
         const newTableContainer = tempDiv.querySelector('#usersTableContainer');
         const newPaginationContainer = tempDiv.querySelector('#paginationContainer');
-        
+
         // Update the table
         if (newTableContainer && tableContainer) {
             tableContainer.innerHTML = newTableContainer.innerHTML;
             tableContainer.style.opacity = '1';
             tableContainer.style.pointerEvents = 'auto';
         }
-        
+
         // Update pagination
         if (newPaginationContainer && paginationContainer) {
             paginationContainer.innerHTML = newPaginationContainer.innerHTML;
             paginationContainer.style.opacity = '1';
             paginationContainer.style.pointerEvents = 'auto';
         }
-        
+
         // Update URL in browser without reload
         const newUrl = urlObj.toString().replace('&ajax=1', '').replace('?ajax=1', '');
         history.pushState({}, '', newUrl);
-        
+
         // Reinitialize event listeners for new content
         reinitializeEventListeners();
     })
@@ -649,7 +715,7 @@ function debounce(func, wait) {
 function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
     const toggle = document.getElementById(fieldId + '-toggle');
-    
+
     if (field.type === 'password') {
         field.type = 'text';
         toggle.classList.remove('fa-eye');
@@ -665,14 +731,14 @@ function checkPasswordStrength() {
     const password = document.getElementById('password').value;
     const strengthBar = document.getElementById('password-strength');
     let strength = 0;
-    
+
     if (password.length >= 8) strength += 25;
     if (password.match(/[a-z]/)) strength += 25;
     if (password.match(/[A-Z]/)) strength += 25;
     if (password.match(/[0-9]/)) strength += 25;
-    
+
     strengthBar.style.width = strength + '%';
-    
+
     if (strength <= 25) {
         strengthBar.className = 'progress-bar bg-danger';
     } else if (strength <= 50) {
@@ -688,13 +754,13 @@ function checkPasswordMatch() {
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('password_confirmation').value;
     const feedback = document.getElementById('password-match-feedback');
-    
+
     if (confirmPassword === '') {
         feedback.textContent = '';
         feedback.className = 'form-text';
         return;
     }
-    
+
     if (password === confirmPassword) {
         feedback.textContent = '✓ Passwords match';
         feedback.className = 'form-text text-success';
@@ -707,13 +773,13 @@ function checkPasswordMatch() {
 function updateRoleDescription() {
     const roleSelect = document.getElementById('roleSelect');
     const roleDescription = document.getElementById('role-description');
-    
+
     const descriptions = {
         'admin': 'Full system access including user management and settings',
         'author': 'Can create, edit, and manage their own books and content',
         'user': 'Standard user access with reading and basic functionality'
     };
-    
+
     if (roleSelect.value && descriptions[roleSelect.value]) {
         roleDescription.textContent = descriptions[roleSelect.value];
         roleDescription.className = 'form-text text-primary';
@@ -726,7 +792,7 @@ function updateRoleDescription() {
 function toggleStatus() {
     const statusSwitch = document.getElementById('statusSwitch');
     const statusText = document.getElementById('statusText');
-    
+
     if (statusSwitch.checked) {
         statusText.textContent = 'Active';
         statusText.className = 'text-success';
@@ -739,29 +805,29 @@ function toggleStatus() {
 // Form validation and submission
 document.getElementById('createUserForm')?.addEventListener('submit', function(e) {
     e.preventDefault(); // Prevent normal form submission
-    
+
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('password_confirmation').value;
     const createBtn = document.getElementById('createUserBtn');
     const createBtnText = document.getElementById('createBtnText');
-    
+
     if (password !== confirmPassword) {
         alert('Passwords do not match!');
         return false;
     }
-    
+
     if (password.length < 8) {
         alert('Password must be at least 8 characters long!');
         return false;
     }
-    
+
     // Show loading state
     createBtn.disabled = true;
     createBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Creating User...';
-    
+
     // Get form data
     const formData = new FormData(this);
-    
+
     // Submit via AJAX
     fetch(this.action, {
         method: 'POST',
@@ -777,12 +843,12 @@ document.getElementById('createUserForm')?.addEventListener('submit', function(e
         if (data.success) {
             // Show success message
             showSuccessMessage('User created successfully!');
-            
+
             // Redirect to users page
             setTimeout(() => {
                 window.location.href = '/admin/users';
             }, 1500); // Wait 1.5 seconds to show notification
-            
+
         } else {
             // Show errors
             if (data.errors) {
@@ -805,7 +871,7 @@ document.getElementById('createUserForm')?.addEventListener('submit', function(e
         createBtn.disabled = false;
         createBtn.innerHTML = '<i class="fas fa-save me-1"></i> <span id="createBtnText">Create User</span>';
     });
-    
+
     return false;
 });
 
@@ -826,9 +892,9 @@ function showSuccessMessage(message) {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto-remove after 3 seconds
     setTimeout(() => {
         if (notification.parentNode) {
@@ -854,7 +920,7 @@ document.getElementById('createUserModal')?.addEventListener('show.bs.modal', fu
     document.getElementById('password-match-feedback').textContent = '';
     document.getElementById('statusText').textContent = 'Active';
     document.getElementById('statusText').className = 'text-success';
-    
+
     // Reset button
     const createBtn = document.getElementById('createUserBtn');
     createBtn.disabled = false;
@@ -884,7 +950,7 @@ function clearAllFilters() {
     document.getElementById('roleFilter').value = '';
     document.getElementById('statusFilter').value = '';
     document.getElementById('sortBy').value = 'created_at';
-    
+
     // Reload page with cleared filters
     const baseUrl = window.location.pathname;
     window.location.href = baseUrl;
@@ -1094,18 +1160,18 @@ function exportUsers() {
     .stats-card {
         padding: 16px !important;
     }
-    
+
     .stats-icon {
         width: 44px !important;
         height: 44px !important;
         font-size: 18px !important;
         margin-right: 12px !important;
     }
-    
+
     .stats-number {
         font-size: 24px !important;
     }
-    
+
     .stats-label {
         font-size: 12px !important;
     }
@@ -1115,20 +1181,150 @@ function exportUsers() {
     .stats-card {
         padding: 14px !important;
     }
-    
+
     .stats-icon {
         width: 40px !important;
         height: 40px !important;
         font-size: 16px !important;
         margin-right: 10px !important;
     }
-    
+
     .stats-number {
         font-size: 20px !important;
     }
-    
+
     .stats-label {
         font-size: 11px !important;
+    }
+}
+
+/* Enhanced User Profile View Styles */
+.user-profile-view {
+    max-width: 100%;
+}
+
+.profile-image-container {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-image-lg {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-image-lg:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.profile-image-placeholder {
+    transition: all 0.3s ease;
+}
+
+.profile-image-placeholder:hover {
+    background-color: #e9ecef !important;
+}
+
+.detail-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.detail-section:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #dee2e6;
+}
+
+.section-title {
+    color: #495057;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.detail-value {
+    font-size: 14px;
+    color: #212529;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.detail-value a {
+    color: #007bff;
+    transition: color 0.2s ease;
+}
+
+.detail-value a:hover {
+    color: #0056b3;
+    text-decoration: underline !important;
+}
+
+/* Responsive adjustments for profile view */
+@media (max-width: 768px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .detail-section {
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .profile-image-lg,
+    .profile-image-placeholder {
+        width: 100px !important;
+        height: 100px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .detail-section {
+        padding: 12px;
+    }
+    
+    .section-title {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+    
+    .detail-value {
+        font-size: 13px;
+    }
+    
+    .profile-image-lg,
+    .profile-image-placeholder {
+        width: 80px !important;
+        height: 80px !important;
     }
 }
 </style>
@@ -1140,7 +1336,7 @@ function exportUsers() {
 document.getElementById('searchInput').addEventListener('input', function() {
     const search = this.value.toLowerCase();
     const rows = document.querySelectorAll('#usersTable tbody tr');
-    
+
     rows.forEach(row => {
         const name = row.dataset.name || '';
         const email = row.dataset.email || '';
@@ -1157,14 +1353,14 @@ function filterTable() {
     const role = document.getElementById('roleFilter').value;
     const status = document.getElementById('statusFilter').value;
     const rows = document.querySelectorAll('#usersTable tbody tr');
-    
+
     rows.forEach(row => {
         const rowRole = row.dataset.role || '';
         const rowStatus = row.dataset.status || '';
-        
+
         const roleMatch = !role || rowRole === role;
         const statusMatch = !status || rowStatus === status;
-        
+
         row.style.display = (roleMatch && statusMatch) ? '' : 'none';
     });
 }
@@ -1176,7 +1372,7 @@ function sortTable(column) {
     const currentOrder = sortOrder[column] || 'asc';
     const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
     sortOrder[column] = newOrder;
-    
+
     const url = new URL(window.location);
     url.searchParams.set('sort', column);
     url.searchParams.set('order', newOrder);
@@ -1191,29 +1387,134 @@ document.getElementById('selectAll').addEventListener('change', function() {
     });
 });
 
+// Store current viewing user ID for edit functionality
+let currentViewingUserId = null;
+
 // CRUD operations
 function viewUser(id) {
+    currentViewingUserId = id;
     fetch(`/admin/users/${id}`)
         .then(response => response.json())
         .then(data => {
+            // Determine profile image source
+            const profileImage = data.image_profile ? 
+                (data.image_profile.startsWith('http') ? data.image_profile : `/storage/${data.image_profile}`) : 
+                null;
+            
+            // Format role display
+            const roleDisplay = {
+                'admin': '<i class="fas fa-user-shield me-1"></i>Administrator',
+                'author': '<i class="fas fa-user-edit me-1"></i>Author',
+                'user': '<i class="fas fa-user me-1"></i>User'
+            }[data.role] || data.role;
+            
+            // Format status display
+            const statusDisplay = data.status == 1 ? 
+                '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Active</span>' : 
+                '<span class="badge bg-secondary"><i class="fas fa-pause-circle me-1"></i>Inactive</span>';
+            
             const details = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>ID:</strong> ${data.id}<br>
-                        <strong>Name:</strong> ${data.name}<br>
-                        <strong>Email:</strong> ${data.email}<br>
-                        <strong>Role:</strong> ${data.role}<br>
-                        <strong>Joined:</strong> ${data.created_at}
+                <div class="user-profile-view p-4">
+                    <!-- Profile Header with Image -->
+                    <div class="text-center mb-4">
+                        <div class="profile-image-container mb-3">
+                            ${profileImage ? 
+                                `<img src="${profileImage}" alt="${data.name}" class="profile-image-lg rounded-circle shadow-sm" style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #f8f9fa;">` :
+                                `<div class="profile-image-placeholder rounded-circle bg-light d-flex align-items-center justify-content-center shadow-sm" style="width: 120px; height: 120px; border: 4px solid #f8f9fa;">
+                                    <i class="fas fa-user text-muted" style="font-size: 48px;"></i>
+                                </div>`
+                            }
+                        </div>
+                        <h5 class="mb-1">${data.name}</h5>
+                        <p class="text-muted mb-2">ID: #${data.id}</p>
+                        <div class="d-inline-flex gap-2 align-items-center">
+                            ${roleDisplay}
+                            ${statusDisplay}
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <strong>Phone:</strong> ${data.phone || 'Not provided'}<br>
-                        <strong>Address:</strong> ${data.address || 'Not provided'}
+                    
+                    <!-- User Details -->
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="detail-section">
+                                <h6 class="section-title"><i class="fas fa-user-circle me-2"></i>Personal Information</h6>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <label class="detail-label">Full Name</label>
+                                        <div class="detail-value">${data.name}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label class="detail-label">Email Address</label>
+                                        <div class="detail-value">
+                                            <a href="mailto:${data.email}" class="text-decoration-none">${data.email}</a>
+                                        </div>
+                                    </div>
+                                    ${data.phone ? `
+                                    <div class="detail-item">
+                                        <label class="detail-label">Phone Number</label>
+                                        <div class="detail-value">
+                                            <a href="tel:${data.phone}" class="text-decoration-none">${data.phone}</a>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                    ${data.address ? `
+                                    <div class="detail-item">
+                                        <label class="detail-label">Address</label>
+                                        <div class="detail-value">${data.address}</div>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="detail-section">
+                                <h6 class="section-title"><i class="fas fa-cog me-2"></i>Account Information</h6>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <label class="detail-label">Role</label>
+                                        <div class="detail-value">${roleDisplay}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label class="detail-label">Status</label>
+                                        <div class="detail-value">${statusDisplay}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label class="detail-label">Member Since</label>
+                                        <div class="detail-value">${new Date(data.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label class="detail-label">Last Updated</label>
+                                        <div class="detail-value">${data.updated_at ? new Date(data.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Never'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
             document.getElementById('userDetails').innerHTML = details;
             new bootstrap.Modal(document.getElementById('viewUserModal')).show();
+        })
+        .catch(error => {
+            console.error('Error fetching user details:', error);
+            alert('Error loading user details. Please try again.');
         });
+}
+
+function editUserFromView() {
+    if (currentViewingUserId) {
+        // Close the view modal
+        const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewUserModal'));
+        if (viewModal) {
+            viewModal.hide();
+        }
+        
+        // Open the edit modal
+        setTimeout(() => {
+            editUser(currentViewingUserId);
+        }, 300);
+    }
 }
 
 function editUser(id) {
@@ -1226,10 +1527,10 @@ function editUser(id) {
             document.getElementById('editRole').value = data.role;
             document.getElementById('editPhone').value = data.phone || '';
             document.getElementById('editAddress').value = data.address || '';
-            
+
             const form = document.getElementById('editUserForm');
             form.action = form.action.replace(':id', id);
-            
+
             new bootstrap.Modal(document.getElementById('editUserModal')).show();
         });
 }

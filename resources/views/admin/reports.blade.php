@@ -135,123 +135,58 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @forelse ($reports ?? [] as $report)
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="report-icon bg-primary">
-                                                <i class="fas fa-users"></i>
+                                            <div class="report-icon bg-{{ $report['color'] }}">
+                                                <i class="{{ $report['icon'] }}"></i>
                                             </div>
                                             <div class="ms-3">
-                                                <h6 class="report-name">User Activity Report</h6>
-                                                <small class="text-muted">Monthly user engagement</small>
+                                                <h6 class="report-name">{{ $report['name'] }}</h6>
+                                                <small class="text-muted">{{ $report['description'] }}</small>
                                             </div>
                                         </div>
                                     </td>
-                                    <td><span class="badge bg-primary">Analytics</span></td>
+                                    <td><span class="badge bg-{{ $report['color'] }}">{{ $report['type'] }}</span></td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="user-avatar-sm me-2">{{ substr(auth()->user()->name, 0, 1) }}</div>
+                                            <div class="user-avatar-sm me-2">{{ substr($report['generated_by'], 0, 1) }}</div>
                                             <div>
-                                                <div class="fw-semibold">{{ auth()->user()->name }}</div>
+                                                <div class="fw-semibold">{{ $report['generated_by'] }}</div>
                                                 <small class="text-muted">{{ auth()->user()->email }}</small>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{{ now()->format('M d, Y') }}</td>
-                                    <td><span class="badge bg-success">PDF</span></td>
-                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>{{ $report['generated_at'] }}</td>
+                                    <td><span class="badge bg-info">{{ $report['file_size'] }}</span></td>
+                                    <td>
+                                        <span class="badge bg-{{ $report['status'] === 'completed' ? 'success' : 'warning' }}">
+                                            {{ ucfirst($report['status']) }}
+                                        </span>
+                                    </td>
                                     <td>
                                         <div class="table-actions">
-                                            <button class="icon-btn text-info" title="View Details" onclick="viewReport(1)">
+                                            <button class="icon-btn text-info" title="View Details" onclick="viewReport({{ $report['id'] }})">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            <button class="icon-btn text-success" title="Download" onclick="downloadReport(1)">
+                                            <button class="icon-btn text-success" title="Download" onclick="downloadReport({{ $report['id'] }})">
                                                 <i class="fas fa-download"></i>
                                             </button>
-                                            <button class="icon-btn text-warning" title="Share" onclick="shareReport(1)">
+                                            <button class="icon-btn text-warning" title="Share" onclick="shareReport({{ $report['id'] }})">
                                                 <i class="fas fa-share"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
+                                @empty
                                 <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="report-icon bg-success">
-                                                <i class="fas fa-book"></i>
-                                            </div>
-                                            <div class="ms-3">
-                                                <h6 class="report-name">Book Statistics Report</h6>
-                                                <small class="text-muted">Popular books and categories</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge bg-success">Statistics</span></td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="user-avatar-sm me-2">{{ substr(auth()->user()->name, 0, 1) }}</div>
-                                            <div>
-                                                <div class="fw-semibold">{{ auth()->user()->name }}</div>
-                                                <small class="text-muted">{{ auth()->user()->email }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>{{ now()->subDays(1)->format('M d, Y') }}</td>
-                                    <td><span class="badge bg-warning">Excel</span></td>
-                                    <td><span class="badge bg-success">Completed</span></td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <button class="icon-btn text-info" title="View Details" onclick="viewReport(2)">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="icon-btn text-success" title="Download" onclick="downloadReport(2)">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                            <button class="icon-btn text-warning" title="Share" onclick="shareReport(2)">
-                                                <i class="fas fa-share"></i>
-                                            </button>
-                                        </div>
+                                    <td colspan="7" class="text-center py-4">
+                                        <i class="fas fa-file-alt text-muted fa-2x mb-2"></i>
+                                        <p class="text-muted">No reports available</p>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="report-icon bg-info">
-                                                <i class="fas fa-download"></i>
-                                            </div>
-                                            <div class="ms-3">
-                                                <h6 class="report-name">Download Statistics Report</h6>
-                                                <small class="text-muted">Weekly download trends</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge bg-info">Statistics</span></td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="user-avatar-sm me-2">{{ substr(auth()->user()->name, 0, 1) }}</div>
-                                            <div>
-                                                <div class="fw-semibold">{{ auth()->user()->name }}</div>
-                                                <small class="text-muted">{{ auth()->user()->email }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>{{ now()->subDays(3)->format('M d, Y') }}</td>
-                                    <td><span class="badge bg-success">PDF</span></td>
-                                    <td><span class="badge bg-success">Completed</span></td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <button class="icon-btn text-info" title="View Details" onclick="viewReport(3)">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="icon-btn text-success" title="Download" onclick="downloadReport(3)">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                            <button class="icon-btn text-warning" title="Share" onclick="shareReport(3)">
-                                                <i class="fas fa-share"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>

@@ -30,6 +30,8 @@ class Book extends Model
         'language',
         'isbn',
         'published_date',
+        'publisher',
+        'excerpt',
         'views',
         'downloads',
         'rating',

@@ -6,7 +6,7 @@
 
 @php
 // Helper functions for display
-$getCategoryColor = function($categoryName) {
+function getCategoryColor($categoryName) {
     $colors = [
         'Programming' => '#007bff',
         'Design' => '#28a745',
@@ -18,7 +18,7 @@ $getCategoryColor = function($categoryName) {
         'AI/ML' => '#20c997',
     ];
     return $colors[$categoryName] ?? '#6c757d';
-};
+}
 @endphp
 
 @section('content')
@@ -208,9 +208,9 @@ $getCategoryColor = function($categoryName) {
                                 <span class="fw-semibold">{{ $favorite->book->author->name ?? 'N/A' }}</span>
                             </td>
                             <td>
-                                @if($favorite->book->categories->count() > 0)
+                                @if($favorite->book->categories && $favorite->book->categories->count() > 0)
                                     @foreach($favorite->book->categories as $category)
-                                        <span class="badge me-1" style="background-color: {{ getCategoryColor($category->name) }};">
+                                        <span class="badge me-1" style="background-color: @categoryColor($category->name ?? 'Default');">
                                             {{ $category->name }}
                                         </span>
                                     @endforeach

@@ -96,8 +96,8 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0">
                 <i class="fas fa-tags me-2"></i>
                 All Tags
@@ -163,8 +163,8 @@
             <!-- Table View (Hidden by default) -->
             <div id="tableView" style="display: none;">
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
+                    <table class="table table-hover align-middle">
+                        <thead class="bg-light">
                             <tr>
                                 <th>
                                     <input type="checkbox" class="form-check-input" id="selectAllTable" onchange="toggleSelectAllTable()">
@@ -364,7 +364,10 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Tag</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>
+                    Edit Tag
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="#" method="POST" id="editTagForm" onsubmit="updateTag(event)">
@@ -438,7 +441,10 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Tag Details</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>
+                    Tag Details
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="tagDetails">
@@ -815,24 +821,44 @@ function performBulkDelete(ids) {
 
 // CRUD operations
 function editTag(id) {
+    console.log('Edit tag ID:', id);
+    
     fetch(`/admin/tags/${id}/edit`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Raw response:', response);
+            return response.json();
+        })
         .then(data => {
-            document.getElementById('editTagId').value = data.id;
-            document.getElementById('editTagName').value = data.name;
-            document.getElementById('editTagDescription').value = data.description || '';
+            console.log('Tag data loaded:', data);
+            
+            // Check if data is wrapped in response object
+            const tagData = data.tag || data;
+            
+            if (!tagData || !tagData.id) {
+                console.error('No tag data received');
+                showNotification('Error loading tag data', 'error');
+                return;
+            }
+            
+            document.getElementById('editTagId').value = tagData.id || '';
+            document.getElementById('editTagName').value = tagData.name || '';
+            document.getElementById('editTagDescription').value = tagData.description || '';
             
             // Set color radio button
-            const color = data.color || '#007bff';
+            const color = tagData.color || '#007bff';
             const colorRadio = document.querySelector(`input[name="color"][value="${color}"]`);
             if (colorRadio) {
                 colorRadio.checked = true;
             }
             
             const form = document.getElementById('editTagForm');
-            form.action = `/admin/tags/${id}`;
+            form.action = `/admin/tags/${tagData.id}`;
             
             new bootstrap.Modal(document.getElementById('editTagModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading tag:', error);
+            showNotification('Error loading tag data', 'error');
         });
 }
 
@@ -840,16 +866,25 @@ function updateTag(event) {
     event.preventDefault();
     
     const form = document.getElementById('editTagForm');
+    const tagId = document.getElementById('editTagId').value;
     const formData = new FormData(form);
+    
+    console.log('Updating tag:', tagId);
+    console.log('Form data:', Object.fromEntries(formData));
+    
+    // Update form action dynamically
+    form.action = `/admin/tags/${tagId}`;
     
     fetch(form.action, {
         method: 'POST',
         body: formData,
         headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
     .then(response => {
+        console.log('Raw response:', response);
         if (response.redirected) {
             window.location.href = response.url;
             return;
@@ -857,35 +892,58 @@ function updateTag(event) {
         return response.json();
     })
     .then(data => {
+        console.log('Update response:', data);
         if (data && data.success) {
             const modal = bootstrap.Modal.getInstance(document.getElementById('editTagModal'));
             modal.hide();
+            showNotification('Tag updated successfully', 'success');
             location.reload();
         } else if (data && data.errors) {
             console.error('Validation errors:', data.errors);
-            alert('Please fix the errors in the form.');
+            showNotification('Please fix the errors in the form.', 'error');
+        } else {
+            showNotification('Unknown error occurred', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while updating the tag.');
+        console.error('Error updating tag:', error);
+        showNotification('Error updating tag', 'error');
     });
 }
 
 function viewTag(id) {
+    console.log('View tag ID:', id);
+    
     fetch(`/admin/tags/${id}`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Raw response:', response);
+            return response.json();
+        })
         .then(data => {
+            console.log('Tag data loaded:', data);
+            
+            // Check if data is wrapped in response object
+            const tagData = data.tag || data;
+            
+            if (!tagData || !tagData.id) {
+                console.error('No tag data received');
+                showNotification('Error loading tag data', 'error');
+                return;
+            }
+            
             const details = `
                 <div class="row">
                     <div class="col-md-6">
-                        <strong>Name:</strong> ${data.name}<br>
-                        <strong>Description:</strong> ${data.description || 'No description'}<br>
-                        <strong>Color:</strong> <span class="badge" style="background-color: ${data.color || '#6c757d'}; color: white;">${data.color || 'Default'}</span>
+                        <strong>ID:</strong> ${tagData.id || 'N/A'}<br>
+                        <strong>Name:</strong> ${tagData.name || 'N/A'}<br>
+                        <strong>Description:</strong> ${tagData.description || 'No description'}<br>
+                        <strong>Color:</strong> <span class="badge" style="background-color: ${tagData.color || '#6c757d'}; color: white;">${tagData.color || 'Default'}</span>
                     </div>
                     <div class="col-md-6">
-                        <strong>Books Count:</strong> ${data.books_count || 0}<br>
-                        <strong>Status:</strong> <span class="badge bg-success">Active</span>
+                        <strong>Books Count:</strong> ${tagData.books_count || 0}<br>
+                        <strong>Status:</strong> <span class="badge bg-success">Active</span><br>
+                        <strong>Created:</strong> ${tagData.created_at ? new Date(tagData.created_at).toLocaleDateString() : 'N/A'}<br>
+                        <strong>Updated:</strong> ${tagData.updated_at ? new Date(tagData.updated_at).toLocaleDateString() : 'N/A'}
                     </div>
                 </div>
             `;
@@ -893,6 +951,7 @@ function viewTag(id) {
             new bootstrap.Modal(document.getElementById('viewTagModal')).show();
         })
         .catch(error => {
+            console.error('Error loading tag:', error);
             showNotification('Error fetching tag details', 'error');
         });
 }
@@ -909,13 +968,16 @@ function deleteTag(id) {
     // Fetch tag information first
     fetch(`/admin/tags/${id}`)
         .then(response => response.json())
-        .then(tag => {
+        .then(data => {
+            // Check if data is wrapped in response object
+            const tagData = data.tag || data;
+            
             // Show delete confirmation modal with tag name
             const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
             document.getElementById('deleteMessage').textContent = 
-                `Are you sure? You want to delete ${tag.name}?`;
+                `Are you sure? You want to delete ${tagData.name}?`;
             document.getElementById('deleteDescription').textContent = 
-                `This action cannot be undone. The tag ${tag.name} will be permanently deleted.`;
+                `This action cannot be undone. The tag ${tagData.name} will be permanently deleted.`;
             
             // Set up confirm button
             document.getElementById('confirmDeleteBtn').onclick = function() {

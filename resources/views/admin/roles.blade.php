@@ -207,10 +207,10 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="role_name">Role Name *</label>
-                    <input type="text" id="role_name" name="name" required 
+                    <input type="text" id="role_name" name="name" required
                            placeholder="e.g., moderator, editor, contributor">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="role_description">Description</label>
                     <textarea id="role_description" name="description" rows="3"
@@ -272,7 +272,7 @@
                     <label for="edit_role_name">Role Name *</label>
                     <input type="text" id="edit_role_name" name="name" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit_role_description">Description</label>
                     <textarea id="edit_role_description" name="description" rows="3"></textarea>
@@ -1188,7 +1188,7 @@ function editRole(id) {
         .then(data => {
             document.getElementById('edit_role_name').value = data.name;
             document.getElementById('edit_role_description').value = data.description || '';
-            
+
             // Load permissions
             const permissionsContainer = document.getElementById('edit_permissions');
             permissionsContainer.innerHTML = `
@@ -1217,10 +1217,10 @@ function editRole(id) {
                     <span>Manage Roles</span>
                 </label>
             `;
-            
+
             // Set form action
             document.getElementById('editRoleForm').action = `/admin/roles/${id}`;
-            
+
             // Show modal
             document.getElementById('editRoleModal').style.display = 'flex';
         })
@@ -1254,12 +1254,12 @@ function viewRole(id) {
                         <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.9rem;">ID: #${String(data.id).padStart(4, '0')}</p>
                     </div>
                 </div>
-                
+
                 <div style="margin-bottom: 20px;">
                     <h5 style="margin: 0 0 8px 0; font-weight: 700; color: #374151;">Description</h5>
                     <p style="margin: 0; color: #64748b; line-height: 1.6;">${data.description || 'No description available.'}</p>
                 </div>
-                
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
                     <div>
                         <h5 style="margin: 0 0 8px 0; font-weight: 700; color: #374151;">Users</h5>
@@ -1276,7 +1276,7 @@ function viewRole(id) {
                         </div>
                     </div>
                 </div>
-                
+
                 <div>
                     <h5 style="margin: 0 0 8px 0; font-weight: 700; color: #374151;">Status</h5>
                     <span class="pill pill-success">
@@ -1285,7 +1285,7 @@ function viewRole(id) {
                     </span>
                 </div>
             `;
-            
+
             document.getElementById('viewRoleModal').style.display = 'flex';
         })
         .catch(error => {

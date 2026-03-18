@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'image_profile',
     ];
 
     /**
@@ -91,6 +92,24 @@ class User extends Authenticatable
     public function canManageUsers(): bool
     {
         return $this->isAdmin();
+    }
+
+    /**
+     * Get profile image URL
+     */
+    public function getProfileImageUrlAttribute()
+    {
+        if ($this->image_profile) {
+            // Check if it's already a full URL
+            if (filter_var($this->image_profile, FILTER_VALIDATE_URL)) {
+                return $this->image_profile;
+            }
+            // Otherwise, treat it as a storage path
+            return asset('storage/' . $this->image_profile);
+        }
+        
+        // Return default avatar
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
     }
 
     /**
